@@ -3,3 +3,4 @@
  * client and server). Add new app modules here.
  */
 import './directory/def.ts';
+import './projects/def.ts';
