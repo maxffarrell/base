@@ -11,6 +11,7 @@
 	import { aiSummarize, getAiStatus } from '#lib/remote/ai.remote.ts';
 	import EntityForm from '#lib/components/app/entity-form.svelte';
 	import PageHeader from '#lib/components/app/page-header.svelte';
+	import RecordAttachments from '#lib/components/app/record-attachments.svelte';
 	import RecordFields from '#lib/components/app/record-fields.svelte';
 	import { confirmDelete } from '#lib/components/ui/confirm-delete-dialog/index.js';
 	import { getEntityDef, recordTitle } from '#lib/entities.ts';
@@ -105,6 +106,7 @@
 				</Card.Root>
 				<div class="space-y-4">
 					<RecordFields entity={def.name} recordId={id} />
+					<RecordAttachments entity={def.name} recordId={id} />
 					{#await activityQuery then activity}
 						{#if activity && activity.rows.length}
 							<Card.Root>
