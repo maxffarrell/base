@@ -8,6 +8,7 @@ import type { OrgContext } from '#lib/server/context.ts';
 import type { workflowInput, workflowUpdate } from '#lib/schemas.ts';
 import type { BaseEvent } from '#lib/server/services/events.ts';
 import { inboxForManagers } from '#lib/server/services/inbox.ts';
+import { getNotificationPrefs } from '#lib/server/services/notifications.ts';
 import { createRecord } from '#lib/server/services/entity.ts';
 import { error } from '@sveltejs/kit';
 
@@ -82,6 +83,8 @@ export async function runWorkflows(event: BaseEvent) {
 	for (const rule of matched) {
 		try {
 			if (rule.action === 'notify') {
+				const prefs = await getNotificationPrefs(event.organizationId);
+				if (!prefs['workflow.notify']) continue;
 				const body = rule.config.message ? render(rule.config.message, event) : event.summary;
 				const href = entityHref(event.entity.type, event.entity.id);
 				await inboxForManagers(event.organizationId, `workflow.${rule.id}`, event.entity.id, {
