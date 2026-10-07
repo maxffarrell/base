@@ -30,6 +30,23 @@
 			.concat([{ key: 'none', count: counts['none'] ?? 0 }])
 			.filter((x) => x.count > 0);
 	}
+
+	const me = $derived(page.data.user?.id ?? '');
+	/** Defs with a `user` field — each becomes an "Assigned to me" section. */
+	const assignable = $derived(
+		defs
+			.map((d) => ({ def: d, field: d.fields.find((f) => f.type === 'user') }))
+			.filter((x) => x.field)
+	);
+
+	async function myRecords(entity: string, field: string) {
+		const { rows } = await listEntityRecords({
+			entity,
+			filters: { [field]: me },
+			limit: 8
+		});
+		return rows;
+	}
 </script>
 
 <PageHeader title="Dashboard" />
@@ -85,6 +102,38 @@
 					</Card.Content>
 				</Card.Root>
 			</a>
+		{/each}
+	</div>
+
+	<div class="grid gap-4 lg:grid-cols-2">
+		{#each assignable as { def: d, field } (d.name)}
+			{#if field && me}
+				{#await myRecords(d.name, field.key) then mine}
+					{#if mine.length}
+						<Card.Root>
+							<Card.Header class="flex-row items-center justify-between space-y-0">
+								<Card.Title class="text-base">My {d.labelPlural ?? `${d.label}s`}</Card.Title>
+								<a
+									class="text-xs text-muted-foreground hover:underline"
+									href="/{d.name}?filter_{field.key}={me}">View all →</a
+								>
+							</Card.Header>
+							<Card.Content>
+								<ul class="divide-y">
+									{#each mine as r (r.id)}
+										<li>
+											<a
+												class="block truncate py-2 text-sm font-medium hover:underline"
+												href="/{d.name}/{r.id}">{r[d.titleField ?? 'id'] ?? r.id}</a
+											>
+										</li>
+									{/each}
+								</ul>
+							</Card.Content>
+						</Card.Root>
+					{/if}
+				{/await}
+			{/if}
 		{/each}
 	</div>
 
