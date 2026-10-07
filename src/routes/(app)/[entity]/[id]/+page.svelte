@@ -22,13 +22,15 @@
 	import {
 		deleteEntityRecord,
 		getEntityRecord,
-		getRecordActivity
+		getRecordActivity,
+		getRelatedRecords
 	} from '#lib/remote/entities.remote.ts';
 
 	const def = $derived(getEntityDef(page.params.entity ?? ''));
 	const id = $derived(page.params.id ?? '');
 	const recordQuery = $derived(def ? getEntityRecord({ entity: def.name, id }) : null);
 	const activityQuery = $derived(def ? getRecordActivity({ entity: def.name, id }) : null);
+	const relatedQuery = $derived(def ? getRelatedRecords({ entity: def.name, id }) : null);
 	const aiStatus = $derived(await getAiStatus());
 	let aiSummary = $state<string | null>(null);
 	let aiBusy = $state(false);
@@ -129,6 +131,39 @@
 				<div class="space-y-4">
 					<RecordFields entity={def.name} recordId={id} />
 					<RecordAttachments entity={def.name} recordId={id} />
+					{#await relatedQuery then related}
+						{#if related && related.length}
+							<Card.Root>
+								<Card.Header><Card.Title class="text-base">Related</Card.Title></Card.Header>
+								<Card.Content class="space-y-3">
+									{#each related as section (section.entity)}
+										<div>
+											<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+												{section.label}
+											</p>
+											<ul class="mt-1 space-y-1">
+												{#each section.rows as row (row.id)}
+													<li>
+														<a
+															class="block truncate text-sm hover:underline"
+															href="/{section.entity}/{row.id}">{row.title}</a
+														>
+													</li>
+												{/each}
+											</ul>
+											{#if section.count > section.rows.length}
+												<a
+													class="mt-1 inline-block text-xs text-muted-foreground hover:underline"
+													href="/{section.entity}?filter_{section.field}={id}"
+													>View all {section.count} →</a
+												>
+											{/if}
+										</div>
+									{/each}
+								</Card.Content>
+							</Card.Root>
+						{/if}
+					{/await}
 					{#await activityQuery then activity}
 						{#if activity && activity.rows.length}
 							<Card.Root>

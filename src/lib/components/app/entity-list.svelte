@@ -200,6 +200,8 @@
 	$effect(() => {
 		if (def.defaultSort && !sort.key) sort = { ...def.defaultSort };
 		if (page.url.searchParams.get('new') === '1') showNew = true;
+		for (const [k, v] of page.url.searchParams)
+			if (k.startsWith('filter_')) filters[k.slice(7)] = v;
 		for (const f of def.fields) {
 			if (f.type === 'link' && f.linkTo && !linkTitles[f.key]) {
 				void getLinkOptions(f.linkTo).then((opts) => {
