@@ -4,6 +4,7 @@ import { activity, member, user } from '#lib/server/db/schema.ts';
 
 export type AuditFilter = {
 	entityType?: string;
+	entityId?: string;
 	action?: string;
 	actorId?: string;
 	q?: string;
@@ -16,6 +17,7 @@ export type AuditFilter = {
 function conditions(orgId: string, f: AuditFilter): SQL[] {
 	const conds: SQL[] = [eq(activity.organizationId, orgId)];
 	if (f.entityType) conds.push(eq(activity.entityType, f.entityType));
+	if (f.entityId) conds.push(eq(activity.entityId, f.entityId));
 	if (f.action) conds.push(eq(activity.action, f.action));
 	if (f.actorId) conds.push(eq(activity.actorId, f.actorId));
 	const day = (s: string, t: string) => {

@@ -99,3 +99,42 @@ export const bulkDeleteRecords = command(
 		return { deleted: count };
 	}
 );
+
+export const getRecordActivity = query(
+	v.object({ entity: entityName, id: v.string() }),
+	async ({ entity, id }) => {
+		const { orgId } = await requireOrg();
+		const { listAudit } = await import('#lib/server/services/audit.ts');
+		return listAudit(orgId, { entityType: entity, entityId: id, limit: 50 });
+	}
+);
+
+export const importEntityRecords = command(
+	v.object({
+		entity: entityName,
+		rows: v.pipe(v.array(recordInput), v.minLength(1), v.maxLength(500))
+	}),
+	async ({ entity, rows }) => {
+		const ctx = await requireOrg('admin');
+		const results: { row: number; id?: string; error?: string }[] = [];
+		for (const [i, input] of rows.entries()) {
+			try {
+				const rec = await createRecord(ctx, entity, input);
+				results.push({ row: i + 1, id: rec.id });
+			} catch (err) {
+				results.push({
+					row: i + 1,
+					error:
+						(err as { body?: { message?: string }; message?: string })?.body?.message ??
+						(err as Error)?.message ??
+						'Failed'
+				});
+			}
+		}
+		void listEntityRecords({ entity }).refresh();
+		return {
+			created: results.filter((r) => r.id).length,
+			failed: results.filter((r) => r.error)
+		};
+	}
+);
