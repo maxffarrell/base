@@ -5,6 +5,7 @@
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
+	import Copy from '@lucide/svelte/icons/copy';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import * as Modal from '#lib/components/ui/modal/index.js';
@@ -31,6 +32,20 @@
 	const aiStatus = $derived(await getAiStatus());
 	let aiSummary = $state<string | null>(null);
 	let aiBusy = $state(false);
+	let showDup = $state(false);
+
+	/** Pre-fill the create form from this record — no id, so it creates a copy. */
+	const dupSeed = $derived.by(() => {
+		const r = recordQuery?.current;
+		if (!def || !r) return null;
+		const copy: Record<string, unknown> = { ...r };
+		delete copy.id;
+		delete copy.createdAt;
+		delete copy.updatedAt;
+		if (def.titleField && typeof copy[def.titleField] === 'string')
+			copy[def.titleField] = `${copy[def.titleField]} (copy)`;
+		return copy;
+	});
 
 	async function summarize() {
 		if (!def || aiBusy) return;
@@ -81,6 +96,9 @@
 							><Sparkles class="size-4" /> {aiBusy ? 'Summarizing…' : 'Summarize'}</Button
 						>
 					{/if}
+					<Button variant="outline" size="sm" onclick={() => (showDup = true)}
+						><Copy /> Duplicate</Button
+					>
 					<Button variant="destructive" size="sm" onclick={remove}><Trash2 /> Delete</Button>
 				{/if}
 			{/snippet}
@@ -139,6 +157,17 @@
 {:else}
 	<div class="p-8 text-center text-sm text-muted-foreground">Unknown entity.</div>
 {/if}
+
+<Modal.Root bind:open={showDup}>
+	<Modal.Content class="max-h-[90dvh] overflow-y-auto sm:max-w-xl">
+		<Modal.Header>
+			<Modal.Title>Duplicate {def?.label ?? 'record'}</Modal.Title>
+		</Modal.Header>
+		{#if def && dupSeed}
+			<EntityForm {def} record={dupSeed} onsaved={(r) => goto(`/${def.name}/${r.id}`)} />
+		{/if}
+	</Modal.Content>
+</Modal.Root>
 
 <Modal.Root open={aiSummary !== null} onOpenChange={(v) => !v && (aiSummary = null)}>
 	<Modal.Content class="sm:max-w-lg">
