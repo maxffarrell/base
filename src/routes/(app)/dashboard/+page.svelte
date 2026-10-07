@@ -2,12 +2,34 @@
 	import { page } from '$app/state';
 	import * as Card from '#lib/components/ui/card/index.js';
 	import PageHeader from '#lib/components/app/page-header.svelte';
-	import { listEntityDefs } from '#lib/entities.ts';
+	import { getEntityDef, listEntityDefs } from '#lib/entities.ts';
+	import { formatRelative } from '#lib/format.ts';
 	import '#lib/modules/index.ts';
+	import { getAuditLog } from '#lib/remote/audit.remote.ts';
 	import { listEntityRecords } from '#lib/remote/entities.remote.ts';
 
 	const defs = listEntityDefs();
 	const org = $derived(page.data.org?.name ?? 'Workspace');
+	const audit = $derived(await getAuditLog({}));
+
+	/** First select field per def — used for the status breakdown bar on each card. */
+	const groupFieldOf = (name: string) =>
+		getEntityDef(name)?.fields.find((f) => f.type === 'select' && (f.options?.length ?? 0) > 1);
+
+	async function breakdown(entity: string) {
+		const gf = groupFieldOf(entity);
+		if (!gf) return [];
+		const { rows } = await listEntityRecords({ entity, limit: 500 });
+		const counts: Record<string, number> = {};
+		for (const r of rows) {
+			const v = (r[gf.key] as string) || 'none';
+			counts[v] = (counts[v] ?? 0) + 1;
+		}
+		return (gf.options ?? [])
+			.map((o) => ({ key: o, count: counts[o] ?? 0 }))
+			.concat([{ key: 'none', count: counts['none'] ?? 0 }])
+			.filter((x) => x.count > 0);
+	}
 </script>
 
 <PageHeader title="Dashboard" />
@@ -40,9 +62,57 @@
 					</Card.Header>
 					<Card.Content>
 						<p class="text-2xl font-semibold tabular-nums">{count}</p>
+						{#if groupFieldOf(d.name)}
+							{#await breakdown(d.name) then parts}
+								{#if parts.length}
+									<div class="mt-3 space-y-1">
+										{#each parts as p (p.key)}
+											<div class="flex items-center gap-2 text-xs">
+												<span class="w-20 truncate text-muted-foreground">{p.key}</span>
+												<div class="h-1.5 flex-1 rounded-full bg-muted">
+													<div
+														class="h-full rounded-full bg-primary"
+														style="width: {count ? (p.count / count) * 100 : 0}%"
+													></div>
+												</div>
+												<span class="w-6 text-right tabular-nums">{p.count}</span>
+											</div>
+										{/each}
+									</div>
+								{/if}
+							{/await}
+						{/if}
 					</Card.Content>
 				</Card.Root>
 			</a>
 		{/each}
 	</div>
+
+	{#if audit.rows.length}
+		<Card.Root class="max-w-3xl">
+			<Card.Header class="flex-row items-center justify-between space-y-0">
+				<Card.Title class="text-base">Recent activity</Card.Title>
+				<a href="/settings/audit" class="text-xs text-muted-foreground hover:underline"
+					>Audit log →</a
+				>
+			</Card.Header>
+			<Card.Content>
+				<ul class="divide-y">
+					{#each audit.rows.slice(0, 12) as a (a.id)}
+						<li class="flex items-baseline justify-between gap-3 py-2 text-sm">
+							<span class="min-w-0 truncate">
+								<a class="font-medium hover:underline" href="/{a.entityType}/{a.entityId}"
+									>{a.summary ?? a.action}</a
+								>
+								<span class="text-muted-foreground"> · {a.actorName ?? 'System'}</span>
+							</span>
+							<span class="shrink-0 text-xs text-muted-foreground"
+								>{formatRelative(a.createdAt)}</span
+							>
+						</li>
+					{/each}
+				</ul>
+			</Card.Content>
+		</Card.Root>
+	{/if}
 </div>
