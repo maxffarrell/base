@@ -17,3 +17,11 @@ export const PATCH: RequestHandler = async (event) => {
 	const input = await parseBody(r.update.schema, event.request, { id: event.params.id });
 	return json({ data: await r.update.run(ctx, input as never) });
 };
+
+export const DELETE: RequestHandler = async (event) => {
+	const ctx = await apiContext(event, 'write');
+	const r = resource(event.params.resource);
+	if (!r.delete) error(405, 'Not supported');
+	await r.delete(ctx, event.params.id);
+	return json({ data: { deleted: true } });
+};

@@ -17,6 +17,7 @@
 	import Search from '@lucide/svelte/icons/search';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import Upload from '@lucide/svelte/icons/upload';
+	import Download from '@lucide/svelte/icons/download';
 	import BulkBar from '#lib/components/app/bulk-bar.svelte';
 	import EntityForm from '#lib/components/app/entity-form.svelte';
 	import KanbanBoard from '#lib/components/app/kanban-board.svelte';
@@ -128,6 +129,51 @@
 		});
 	}
 
+	// CSV export: same search/filters/sort as the table, up to 5000 rows.
+	let exporting = $state(false);
+
+	const csvCell = (v: unknown) => {
+		const s = v == null ? '' : String(v);
+		return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+	};
+
+	async function exportCsv() {
+		exporting = true;
+		try {
+			const { rows } = await listEntityRecords({
+				entity: def.name,
+				q,
+				filters,
+				sort: sort.key || undefined,
+				dir: sort.dir,
+				limit: 5000
+			});
+			const headers = def.fields.map((f) => f.key);
+			const csv = [
+				headers.join(','),
+				...rows.map((r) =>
+					headers
+						.map((h) => {
+							const f = def.fields.find((x) => x.key === h)!;
+							return csvCell(f.type === 'boolean' ? (r[h] ? 'true' : 'false') : r[h]);
+						})
+						.join(',')
+				)
+			].join('\n');
+			const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `${def.name}-${new Date().toISOString().slice(0, 10)}.csv`;
+			a.click();
+			URL.revokeObjectURL(url);
+			toast.success(`Exported ${rows.length} ${rows.length === 1 ? 'record' : 'records'}`);
+		} catch {
+			toast.error('Export failed');
+		} finally {
+			exporting = false;
+		}
+	}
+
 	async function runImport() {
 		const rows = parseCsv(csv);
 		if (!rows.length) {
@@ -235,6 +281,9 @@
 
 <PageHeader title={def.labelPlural ?? `${def.label}s`} crumbs={[{ label: 'Home', href: '/' }]}>
 	{#snippet actions()}
+		<Button size="sm" variant="outline" onclick={exportCsv} disabled={exporting}
+			><Download /> {exporting ? 'Exporting…' : 'Export'}</Button
+		>
 		<Button size="sm" variant="outline" onclick={() => (showImport = true)}
 			><Upload /> Import</Button
 		>

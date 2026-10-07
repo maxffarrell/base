@@ -53,6 +53,19 @@ export const GET: RequestHandler = ({ url }) => {
 								responses: { 200: { description: 'OK' } }
 							}
 						}
+					: {}),
+				...(r.delete
+					? {
+							delete: {
+								tags,
+								summary: `Delete ${one}`,
+								description: `Requires \`${name}:write\`.`,
+								responses: {
+									200: { description: 'Deleted' },
+									404: { description: 'Not found' }
+								}
+							}
+						}
 					: {})
 			};
 		}
