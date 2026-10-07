@@ -3,3 +3,4 @@
  * side effects by the server entry points (remote functions, REST resources).
  */
 import './directory/server.ts';
+import './projects/server.ts';

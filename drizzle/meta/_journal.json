@@ -15,6 +15,13 @@
       "when": 1791410076204,
       "tag": "0001_late_shen",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791410319967,
+      "tag": "0002_purple_grim_reaper",
+      "breakpoints": true
     }
   ]
 }
