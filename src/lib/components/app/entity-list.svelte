@@ -16,19 +16,25 @@
 	import Plus from '@lucide/svelte/icons/plus';
 	import Search from '@lucide/svelte/icons/search';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
+	import Upload from '@lucide/svelte/icons/upload';
 	import BulkBar from '#lib/components/app/bulk-bar.svelte';
 	import EntityForm from '#lib/components/app/entity-form.svelte';
+	import KanbanBoard from '#lib/components/app/kanban-board.svelte';
 	import PageHeader from '#lib/components/app/page-header.svelte';
 	import SavedViewsMenu from '#lib/components/app/saved-views-menu.svelte';
 	import StatusBadge from '#lib/components/app/status-badge.svelte';
+	import ViewSwitcher, { type ViewKind } from '#lib/components/app/view-switcher.svelte';
+	import { Textarea } from '#lib/components/ui/textarea/index.js';
 	import { confirmDelete } from '#lib/components/ui/confirm-delete-dialog/index.js';
 	import type { EntityDef, EntityField } from '#lib/entities.ts';
 	import { formatDate, formatMoney } from '#lib/format.ts';
 	import {
 		bulkDeleteRecords,
 		getLinkOptions,
+		importEntityRecords,
 		listEntityRecords
 	} from '#lib/remote/entities.remote.ts';
+	import { recordTitle } from '#lib/entities.ts';
 	import { cn } from '#lib/utils.js';
 
 	/** Generic list view: search, per-field filters, sortable columns, pagination,
@@ -48,6 +54,102 @@
 	let selected = $state<Set<string>>(new Set());
 	let showNew = $state(false);
 	let linkTitles = $state<Record<string, Record<string, string>>>({});
+
+	// Board view: enabled when the entity has a select field to group by.
+	const groupField = $derived(
+		def.fields.find((f) => f.type === 'select' && (f.options?.length ?? 0) > 1)
+	);
+	const views = $derived<ViewKind[]>(groupField ? ['table', 'kanban'] : ['table']);
+	let view = $state<ViewKind>('table');
+	const kanbanQuery = $derived(
+		view === 'kanban' ? listEntityRecords({ entity: def.name, q, filters, limit: 500 }) : null
+	);
+
+	function kanbanCols(rows: Record<string, unknown>[]) {
+		const opts = groupField?.options ?? [];
+		const by = new Map<string, Record<string, unknown>[]>(opts.map((o) => [o, []]));
+		const none: Record<string, unknown>[] = [];
+		for (const r of rows) {
+			const v = r[groupField!.key] as string | null;
+			(by.get(v ?? '') ?? none).push(r);
+		}
+		return [
+			...opts.map((o) => ({ key: o, label: o, items: by.get(o) ?? [] })),
+			{ key: 'none', label: 'No status', items: none }
+		];
+	}
+
+	// CSV import: first row is field keys; values coerced to the field type.
+	let showImport = $state(false);
+	let csv = $state('');
+	let importing = $state(false);
+	const importFields = $derived(def.fields.filter((f) => !f.readonly).slice(0, 8));
+	const csvHeader = $derived(importFields.map((f) => f.key).join(','));
+
+	function parseCsv(text: string) {
+		const rows: string[][] = [];
+		let cur = [''],
+			inQ = false;
+		const text2 = text.replace(/\r\n?/g, '\n');
+		for (let i = 0; i < text2.length; i++) {
+			const ch = text2[i];
+			if (inQ) {
+				if (ch === '"' && text2[i + 1] === '"') {
+					cur[cur.length - 1] += '"';
+					i++;
+				} else if (ch === '"') inQ = false;
+				else cur[cur.length - 1] += ch;
+			} else if (ch === '"') inQ = true;
+			else if (ch === ',') cur.push('');
+			else if (ch === '\n') {
+				rows.push(cur);
+				cur = [''];
+			} else cur[cur.length - 1] += ch;
+		}
+		rows.push(cur);
+		const [headers, ...data] = rows.filter((r) => r.some((c) => c.trim() !== ''));
+		if (!headers?.length || !data.length) return [];
+		const coerce = new Map(def.fields.map((f) => [f.key, f.type]));
+		return data.map((cols) => {
+			const rec: Record<string, unknown> = {};
+			headers.forEach((h, i) => {
+				const key = h.trim();
+				const raw = (cols[i] ?? '').trim();
+				if (raw === '') return;
+				const t = coerce.get(key);
+				rec[key] =
+					t === 'number' || t === 'currency'
+						? Number(raw)
+						: t === 'boolean'
+							? ['true', 'yes', '1'].includes(raw.toLowerCase())
+							: raw;
+			});
+			return rec;
+		});
+	}
+
+	async function runImport() {
+		const rows = parseCsv(csv);
+		if (!rows.length) {
+			toast.error('No data rows — first row must be field keys');
+			return;
+		}
+		importing = true;
+		try {
+			const res = await importEntityRecords({ entity: def.name, rows });
+			toast.success(
+				`Imported ${res.created}${res.failed.length ? `, ${res.failed.length} failed` : ''}`
+			);
+			for (const f of res.failed.slice(0, 3)) toast.error(`Row ${f.row}: ${f.error}`);
+			csv = '';
+			showImport = false;
+			await query.refresh();
+		} catch (err) {
+			toast.error((err as { body?: { message?: string } })?.body?.message ?? 'Import failed');
+		} finally {
+			importing = false;
+		}
+	}
 
 	$effect(() => {
 		if (def.defaultSort && !sort.key) sort = { ...def.defaultSort };
@@ -133,6 +235,9 @@
 
 <PageHeader title={def.labelPlural ?? `${def.label}s`} crumbs={[{ label: 'Home', href: '/' }]}>
 	{#snippet actions()}
+		<Button size="sm" variant="outline" onclick={() => (showImport = true)}
+			><Upload /> Import</Button
+		>
 		<Button size="sm" onclick={() => (showNew = true)}><Plus /> New {def.label}</Button>
 	{/snippet}
 </PageHeader>
@@ -171,7 +276,8 @@
 				{/if}
 			</NativeSelect.Root>
 		{/each}
-		<div class="ml-auto">
+		<div class="ml-auto flex items-center gap-2">
+			<ViewSwitcher {views} bind:value={view} />
 			<SavedViewsMenu page={def.name} current={viewState} onapply={applyView} />
 		</div>
 	</div>
@@ -193,6 +299,25 @@
 					></Empty.Content
 				>
 			</Empty.Root>
+		{:else if view === 'kanban' && kanbanQuery}
+			{#await kanbanQuery then result}
+				<KanbanBoard columns={kanbanCols(result.rows as Record<string, unknown>[])}>
+					{#snippet card(row)}
+						<button
+							type="button"
+							class="w-full rounded-md border bg-card p-3 text-left shadow-sm hover:bg-accent/50"
+							onclick={() => goto(`/${def.name}/${row.id}`)}
+						>
+							<p class="line-clamp-2 text-sm font-medium">{recordTitle(def, row)}</p>
+							{#if columns[1]}
+								<p class="mt-1 line-clamp-1 text-xs text-muted-foreground">
+									{cell(columns[1], row)}
+								</p>
+							{/if}
+						</button>
+					{/snippet}
+				</KanbanBoard>
+			{/await}
 		{:else}
 			<div class="overflow-x-auto rounded-md border">
 				<Table.Root>
@@ -310,5 +435,28 @@
 				void query.refresh();
 			}}
 		/>
+	</Modal.Content>
+</Modal.Root>
+
+<Modal.Root bind:open={showImport}>
+	<Modal.Content class="sm:max-w-xl">
+		<Modal.Header>
+			<Modal.Title>Import {def.labelPlural ?? `${def.label}s`}</Modal.Title>
+			<Modal.Description>
+				Paste CSV — the first row must be field keys, e.g.
+				<code class="text-xs">{csvHeader}</code>. Up to 500 rows.
+			</Modal.Description>
+		</Modal.Header>
+		<Textarea
+			class="min-h-40 font-mono text-xs"
+			placeholder={`${csvHeader}\n…`}
+			bind:value={csv}
+		/>
+		<Modal.Footer>
+			<Button variant="outline" onclick={() => (showImport = false)}>Cancel</Button>
+			<Button onclick={runImport} disabled={importing}>
+				{importing ? 'Importing…' : 'Import'}
+			</Button>
+		</Modal.Footer>
 	</Modal.Content>
 </Modal.Root>

@@ -14,13 +14,18 @@
 	import RecordFields from '#lib/components/app/record-fields.svelte';
 	import { confirmDelete } from '#lib/components/ui/confirm-delete-dialog/index.js';
 	import { getEntityDef, recordTitle } from '#lib/entities.ts';
-	import { formatDate } from '#lib/format.ts';
+	import { formatDate, formatRelative } from '#lib/format.ts';
 	import '#lib/modules/index.ts';
-	import { deleteEntityRecord, getEntityRecord } from '#lib/remote/entities.remote.ts';
+	import {
+		deleteEntityRecord,
+		getEntityRecord,
+		getRecordActivity
+	} from '#lib/remote/entities.remote.ts';
 
 	const def = $derived(getEntityDef(page.params.entity ?? ''));
 	const id = $derived(page.params.id ?? '');
 	const recordQuery = $derived(def ? getEntityRecord({ entity: def.name, id }) : null);
+	const activityQuery = $derived(def ? getRecordActivity({ entity: def.name, id }) : null);
 	const aiStatus = $derived(await getAiStatus());
 	let aiSummary = $state<string | null>(null);
 	let aiBusy = $state(false);
@@ -98,7 +103,28 @@
 						{/if}
 					</Card.Content>
 				</Card.Root>
-				<RecordFields entity={def.name} recordId={id} />
+				<div class="space-y-4">
+					<RecordFields entity={def.name} recordId={id} />
+					{#await activityQuery then activity}
+						{#if activity && activity.rows.length}
+							<Card.Root>
+								<Card.Header><Card.Title class="text-base">Activity</Card.Title></Card.Header>
+								<Card.Content>
+									<ul class="space-y-3">
+										{#each activity.rows as a (a.id)}
+											<li class="text-sm">
+												<p class="leading-snug">{a.summary ?? a.action}</p>
+												<p class="mt-0.5 text-xs text-muted-foreground">
+													{a.actorName ?? 'System'} · {formatRelative(a.createdAt)}
+												</p>
+											</li>
+										{/each}
+									</ul>
+								</Card.Content>
+							</Card.Root>
+						{/if}
+					{/await}
+				</div>
 			</div>
 		{:else}
 			<div class="p-8 text-center text-sm text-muted-foreground">Record not found.</div>
