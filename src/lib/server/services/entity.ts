@@ -1,0 +1,279 @@
+/**
+ * Generic CRUD service — the "ORM over arbitrary DocTypes" layer. One code path
+ * serves the remote functions, the REST API, the generic UI, and workflow
+ * actions; every mutation runs the entity's hook lifecycle and emits an event
+ * (activity feed + webhooks + workflows + integrations fan out from there).
+ */
+import { and, asc, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
+import { error } from '@sveltejs/kit';
+import * as v from 'valibot';
+import type { EntityDef, EntityField } from '#lib/entities.ts';
+import { recordTitle } from '#lib/entities.ts';
+import type { OrgContext } from '#lib/server/context.ts';
+import { db } from '#lib/server/db/index.ts';
+import { emit } from '#lib/server/services/events.ts';
+import {
+	getEntity,
+	type EntityRecord,
+	type EntityRegistration
+} from '#lib/server/entities/registry.ts';
+
+export type ListOptions = {
+	q?: string;
+	filters?: Record<string, string>;
+	sort?: string;
+	dir?: 'asc' | 'desc';
+	limit?: number;
+	offset?: number;
+};
+
+function fieldSchema(f: EntityField): v.GenericSchema {
+	let s: v.GenericSchema;
+	switch (f.type) {
+		case 'number':
+		case 'currency':
+			s = v.number();
+			break;
+		case 'boolean':
+			s = v.boolean();
+			break;
+		case 'select':
+			s = v.picklist(f.options ?? []);
+			break;
+		case 'date':
+			s = v.pipe(v.string(), v.isoDate());
+			break;
+		case 'email':
+			s = v.pipe(v.string(), v.email());
+			break;
+		case 'url':
+			s = v.pipe(v.string(), v.url());
+			break;
+		default:
+			s = v.pipe(v.string(), v.maxLength(2000));
+	}
+	if (f.required)
+		return f.type === 'boolean' || f.type === 'number' || f.type === 'currency'
+			? s
+			: v.pipe(s as v.GenericSchema<string>, v.nonEmpty(`${f.label} is required`));
+	return v.nullish(s);
+}
+
+/** Valibot schema generated from field defs — the API/UI share one validation source. */
+export function inputSchema(def: EntityDef): v.GenericSchema {
+	return v.strictObject(
+		Object.fromEntries(def.fields.filter((f) => !f.readonly).map((f) => [f.key, fieldSchema(f)]))
+	) as v.GenericSchema;
+}
+
+/** Update variant: same fields plus `id` (merged in by the REST route). */
+export function updateInputSchema(def: EntityDef): v.GenericSchema {
+	return v.looseObject({
+		id: v.string(),
+		...Object.fromEntries(def.fields.filter((f) => !f.readonly).map((f) => [f.key, fieldSchema(f)]))
+	}) as v.GenericSchema;
+}
+
+function validateInput(def: EntityDef, input: Record<string, unknown>): Record<string, unknown> {
+	const parsed = v.safeParse(inputSchema(def), input);
+	if (!parsed.success) {
+		const first = parsed.issues[0];
+		error(422, `${first?.path?.[0]?.key ?? 'input'}: ${first?.message ?? 'invalid'}`);
+	}
+	return parsed.output as Record<string, unknown>;
+}
+
+function checkTransition(def: EntityDef, input: Record<string, unknown>, existing?: EntityRecord) {
+	if (!existing) return;
+	for (const f of def.fields) {
+		const rules = f.transitions;
+		if (!rules || !(f.key in input)) continue;
+		const from: string = String(existing[f.key] ?? '');
+		const to: string = String(input[f.key] ?? '');
+		if (to !== from && rules[from] && !rules[from].includes(to))
+			error(422, `${f.label} cannot change from "${from}" to "${to}"`);
+	}
+}
+
+export async function listRecords(
+	orgId: string,
+	name: string,
+	{ q, filters, sort, dir, limit = 50, offset = 0 }: ListOptions = {}
+) {
+	const reg = getEntity(name);
+	const { def, table } = reg;
+	const conds = [eq(table.organizationId, orgId)];
+
+	const searchKeys = def.searchFields ?? [def.titleField ?? 'name'];
+	if (q?.trim()) {
+		const cols = searchKeys
+			.map((k) => table[k])
+			.filter((c): c is NonNullable<typeof c> => Boolean(c));
+		if (cols.length) conds.push(or(...cols.map((c) => ilike(c, `%${q.trim()}%`)))!);
+	}
+	for (const [key, value] of Object.entries(filters ?? {})) {
+		const field = def.fields.find((f) => f.key === key);
+		const col = table[key];
+		if (!field || !col || value === '' || value == null) continue;
+		conds.push(eq(col, field.type === 'boolean' ? value === 'true' : value));
+	}
+
+	const sortKey = sort && table[sort] ? sort : (def.defaultSort?.key ?? 'createdAt');
+	const order = (dir ?? def.defaultSort?.dir) === 'asc' ? asc : desc;
+	const sortCol = table[sortKey] ?? table.createdAt;
+
+	const [rows, [{ count }]] = await Promise.all([
+		db
+			.select()
+			.from(table)
+			.where(and(...conds))
+			.orderBy(order(sortCol), desc(table.createdAt))
+			.limit(limit)
+			.offset(offset),
+		db
+			.select({ count: sql<number>`count(*)`.mapWith(Number) })
+			.from(table)
+			.where(and(...conds))
+	]);
+	return { rows, count };
+}
+
+export async function getRecord(orgId: string, name: string, id: string): Promise<EntityRecord> {
+	const reg = getEntity(name);
+	const [row] = await db
+		.select()
+		.from(reg.table)
+		.where(and(eq(reg.table.organizationId, orgId), eq(reg.table.id, id)));
+	if (!row) error(404, `${reg.def.label} not found`);
+	return row as EntityRecord;
+}
+
+/** Options for a `link` field: id + display title pairs, for select dropdowns. */
+export async function linkOptions(orgId: string, name: string) {
+	const reg = getEntity(name);
+	const { rows } = await listRecords(orgId, name, { limit: 200 });
+	return rows.map((r) => ({ id: r.id as string, title: recordTitle(reg.def, r) }));
+}
+
+async function write(
+	ctx: OrgContext,
+	reg: EntityRegistration,
+	input: Record<string, unknown>,
+	existing?: EntityRecord
+): Promise<EntityRecord> {
+	const { def, table, hooks } = reg;
+	const opts = { existing };
+
+	const transformed = (await hooks?.beforeValidate?.(ctx, input, opts)) ?? input;
+	const data = validateInput(def, transformed);
+	checkTransition(def, data, existing);
+	const message = await hooks?.validate?.(ctx, data, opts);
+	if (typeof message === 'string') error(422, message);
+	await hooks?.beforeSave?.(ctx, data, opts);
+
+	const values = Object.fromEntries(
+		def.fields.filter((f) => !f.readonly && f.key in data).map((f) => [f.key, data[f.key]])
+	);
+
+	let row: EntityRecord | undefined;
+	if (existing) {
+		row = (
+			await db
+				.update(table)
+				.set(values)
+				.where(and(eq(table.organizationId, ctx.orgId), eq(table.id, existing.id)))
+				.returning()
+		)[0] as EntityRecord | undefined;
+	} else {
+		row = (
+			await db
+				.insert(table)
+				.values({ ...values, organizationId: ctx.orgId })
+				.returning()
+		)[0] as EntityRecord | undefined;
+	}
+	if (!row) error(500, 'Write failed');
+	await hooks?.afterSave?.(ctx, row, { created: !existing });
+	return row;
+}
+
+export async function createRecord(
+	ctx: OrgContext,
+	name: string,
+	input: Record<string, unknown>
+): Promise<EntityRecord> {
+	const reg = getEntity(name);
+	const row = await write(ctx, reg, input);
+	emit({
+		orgId: ctx.orgId,
+		actorId: ctx.userId,
+		entityType: name,
+		entityId: row.id,
+		action: 'created',
+		summary: `${recordTitle(reg.def, row)} created`
+	});
+	return row;
+}
+
+export async function updateRecord(
+	ctx: OrgContext,
+	name: string,
+	id: string,
+	input: Record<string, unknown>
+): Promise<EntityRecord> {
+	const reg = getEntity(name);
+	const existing = await getRecord(ctx.orgId, name, id);
+	const row = await write(ctx, reg, input, existing);
+	emit({
+		orgId: ctx.orgId,
+		actorId: ctx.userId,
+		entityType: name,
+		entityId: row.id,
+		action: 'updated',
+		summary: `${recordTitle(reg.def, row)} updated`
+	});
+	return row;
+}
+
+export async function deleteRecord(ctx: OrgContext, name: string, id: string) {
+	const reg = getEntity(name);
+	const existing = await getRecord(ctx.orgId, name, id);
+	await reg.hooks?.onDelete?.(ctx, existing);
+	const [row] = await db
+		.delete(reg.table)
+		.where(and(eq(reg.table.organizationId, ctx.orgId), eq(reg.table.id, id)))
+		.returning({ id: reg.table.id });
+	if (!row) error(404, `${reg.def.label} not found`);
+	emit({
+		orgId: ctx.orgId,
+		actorId: ctx.userId,
+		entityType: name,
+		entityId: id,
+		action: 'deleted',
+		summary: `${recordTitle(reg.def, existing)} deleted`
+	});
+	return row;
+}
+
+export async function bulkDelete(ctx: OrgContext, name: string, ids: string[]) {
+	const reg = getEntity(name);
+	for (const id of ids) {
+		const existing = await getRecord(ctx.orgId, name, id);
+		await reg.hooks?.onDelete?.(ctx, existing);
+	}
+	const rows = await db
+		.delete(reg.table)
+		.where(and(eq(reg.table.organizationId, ctx.orgId), inArray(reg.table.id, ids)))
+		.returning({ id: reg.table.id });
+	for (const id of ids) {
+		emit({
+			orgId: ctx.orgId,
+			actorId: ctx.userId,
+			entityType: name,
+			entityId: id,
+			action: 'deleted',
+			summary: `${reg.def.label} deleted`
+		});
+	}
+	return rows.length;
+}
