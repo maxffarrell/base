@@ -7,15 +7,13 @@
 	let { children } = $props();
 	const tabs = [
 		{ href: '/settings', label: 'General' },
+		{ href: '/settings/profile', label: 'Profile' },
 		{ href: '/settings/team', label: 'Team' },
 		{ href: '/settings/notifications', label: 'Notifications' },
-		{ href: '/settings/templates', label: 'Lease templates' },
-		{ href: '/settings/leasing', label: 'Leasing' },
-		{ href: '/settings/import', label: 'Import' },
 		{ href: '/settings/audit', label: 'Audit log' },
 		{ href: '/settings/fields', label: 'Fields' },
 		{ href: '/settings/workflows', label: 'Workflows' },
-		{ href: '/settings/payments', label: 'Payments' },
+		{ href: '/settings/ai', label: 'AI' },
 		{ href: '/settings/security', label: 'Security' },
 		{ href: '/settings/integrations', label: 'Integrations' },
 		{ href: '/settings/webhooks', label: 'Webhooks' },

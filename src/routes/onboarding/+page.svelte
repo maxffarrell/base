@@ -34,6 +34,7 @@
 		await authClient.organization.setActive({ organizationId: org.id });
 		try {
 			localStorage.setItem('base:onboarded', '1');
+			localStorage.setItem('base:tour:pending', '1');
 		} catch {
 			/* private mode */
 		}
