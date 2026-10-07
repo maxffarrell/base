@@ -44,19 +44,14 @@ export async function emit(e: EventInput) {
 
 	void deliverWebhooks(event).catch((err) => console.error('webhook delivery failed', err));
 	const noticeKey =
-		e.action === 'created'
-			? 'entity.created'
-			: e.action === 'deleted'
-				? 'entity.deleted'
-				: null;
+		e.action === 'created' ? 'entity.created' : e.action === 'deleted' ? 'entity.deleted' : null;
 	if (noticeKey) {
 		void (async () => {
 			const prefs = await getNotificationPrefs(e.orgId);
 			if (prefs[noticeKey]) {
 				await inboxForManagers(e.orgId, noticeKey, e.entityId, {
 					title: e.summary,
-					href:
-						e.action === 'deleted' ? `/${e.entityType}` : `/${e.entityType}/${e.entityId}`
+					href: e.action === 'deleted' ? `/${e.entityType}` : `/${e.entityType}/${e.entityId}`
 				});
 			}
 		})().catch((err) => console.error('inbox notification failed', err));
