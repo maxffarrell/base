@@ -447,11 +447,7 @@
 				<code class="text-xs">{csvHeader}</code>. Up to 500 rows.
 			</Modal.Description>
 		</Modal.Header>
-		<Textarea
-			class="min-h-40 font-mono text-xs"
-			placeholder={`${csvHeader}\n…`}
-			bind:value={csv}
-		/>
+		<Textarea class="min-h-40 font-mono text-xs" placeholder={`${csvHeader}\n…`} bind:value={csv} />
 		<Modal.Footer>
 			<Button variant="outline" onclick={() => (showImport = false)}>Cancel</Button>
 			<Button onclick={runImport} disabled={importing}>
