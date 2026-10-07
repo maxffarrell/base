@@ -3,7 +3,7 @@ import '#lib/modules/server.ts';
 import { command, query } from '$app/server';
 import * as v from 'valibot';
 import { requireOrg } from '#lib/server/context.ts';
-import { listEntityDefs } from '#lib/entities.ts';
+import { listEntityDefs, recordTitle } from '#lib/entities.ts';
 import {
 	bulkDelete,
 	createRecord,
@@ -136,5 +136,35 @@ export const importEntityRecords = command(
 			created: results.filter((r) => r.id).length,
 			failed: results.filter((r) => r.error)
 		};
+	}
+);
+
+/** Related records across every def that has a link field pointing at `entity`. */
+export const getRelatedRecords = query(
+	v.object({ entity: entityName, id: v.string() }),
+	async ({ entity, id }) => {
+		const { orgId } = await requireOrg();
+		const { listEntities } = await import('#lib/server/entities/registry.ts');
+		const sections = [];
+		for (const reg of listEntities()) {
+			if (reg.def.name === entity) continue;
+			for (const f of reg.def.fields) {
+				if (f.type !== 'link' || f.linkTo !== entity) continue;
+				const { rows, count } = await listRecords(orgId, reg.def.name, {
+					filters: { [f.key]: id },
+					limit: 6
+				});
+				if (!count) continue;
+				sections.push({
+					entity: reg.def.name,
+					label: reg.def.labelPlural ?? `${reg.def.label}s`,
+					field: f.key,
+					count,
+					rows: rows.map((r) => ({ id: r.id, title: recordTitle(reg.def, r) }))
+				});
+				break;
+			}
+		}
+		return sections;
 	}
 );
