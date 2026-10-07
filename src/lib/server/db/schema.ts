@@ -37,6 +37,21 @@ export const document = pgTable(
 	(t) => [index('document_entity_idx').on(t.organizationId, t.entityType, t.entityId)]
 );
 
+/** A note/comment thread attachable to any registered entity record. */
+export const comment = pgTable(
+	'comment',
+	{
+		id: id(),
+		organizationId: orgId(),
+		entityType: text('entity_type').notNull(),
+		entityId: text('entity_id').notNull(),
+		authorId: text('author_id').references(() => user.id, { onDelete: 'set null' }),
+		body: text('body').notNull(),
+		...timestamps
+	},
+	(t) => [index('comment_entity_idx').on(t.organizationId, t.entityType, t.entityId)]
+);
+
 export const documentBlob = pgTable('document_blob', {
 	storageKey: text('storage_key').primaryKey(),
 	data: text('data').notNull()

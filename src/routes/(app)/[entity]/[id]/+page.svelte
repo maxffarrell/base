@@ -12,6 +12,7 @@
 	import EntityForm from '#lib/components/app/entity-form.svelte';
 	import PageHeader from '#lib/components/app/page-header.svelte';
 	import RecordAttachments from '#lib/components/app/record-attachments.svelte';
+	import RecordComments from '#lib/components/app/record-comments.svelte';
 	import RecordFields from '#lib/components/app/record-fields.svelte';
 	import { confirmDelete } from '#lib/components/ui/confirm-delete-dialog/index.js';
 	import { getEntityDef, recordTitle } from '#lib/entities.ts';
@@ -87,23 +88,26 @@
 
 		{#if record}
 			<div class="grid gap-4 p-4 lg:grid-cols-[1fr_320px]">
-				<Card.Root>
-					<Card.Header>
-						<Card.Title>Details</Card.Title>
-						<Card.Description class="text-xs"
-							>Created {formatDate(record.createdAt as string)} · Updated {formatDate(
-								record.updatedAt as string
-							)}</Card.Description
-						>
-					</Card.Header>
-					<Card.Content>
-						{#if def.formComponent}
-							<def.formComponent {def} {record} onsaved={() => recordQuery?.refresh()} />
-						{:else}
-							<EntityForm {def} {record} onsaved={() => recordQuery?.refresh()} />
-						{/if}
-					</Card.Content>
-				</Card.Root>
+				<div class="space-y-4">
+					<Card.Root>
+						<Card.Header>
+							<Card.Title>Details</Card.Title>
+							<Card.Description class="text-xs"
+								>Created {formatDate(record.createdAt as string)} · Updated {formatDate(
+									record.updatedAt as string
+								)}</Card.Description
+							>
+						</Card.Header>
+						<Card.Content>
+							{#if def.formComponent}
+								<def.formComponent {def} {record} onsaved={() => recordQuery?.refresh()} />
+							{:else}
+								<EntityForm {def} {record} onsaved={() => recordQuery?.refresh()} />
+							{/if}
+						</Card.Content>
+					</Card.Root>
+					<RecordComments entity={def.name} recordId={id} />
+				</div>
 				<div class="space-y-4">
 					<RecordFields entity={def.name} recordId={id} />
 					<RecordAttachments entity={def.name} recordId={id} />
