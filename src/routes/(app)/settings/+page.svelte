@@ -48,7 +48,8 @@
 <Card.Root>
 	<Card.Header
 		><Card.Title>Get familiar</Card.Title><Card.Description
-			>Take the guided tour of the interface again — it opens on the dashboard.</Card.Description
+			>Take the guided tour of the interface again — it opens on the dashboard. You can also replay
+			it from Settings → Profile.</Card.Description
 		></Card.Header
 	>
 	<Card.Content>

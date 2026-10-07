@@ -7,7 +7,9 @@
 	import * as Field from '#lib/components/ui/field/index.js';
 	import * as NativeSelect from '#lib/components/ui/native-select/index.js';
 	import MoneyInput from '#lib/components/app/money-input.svelte';
+	import Sparkles from '@lucide/svelte/icons/sparkles';
 	import type { EntityDef, EntityField } from '#lib/entities.ts';
+	import { aiDraft, getAiStatus } from '#lib/remote/ai.remote.ts';
 	import {
 		createEntityRecord,
 		getLinkOptions,
@@ -38,6 +40,10 @@
 	let members = $state<{ userId: string; name: string | null; email: string }[]>([]);
 	let saving = $state(false);
 	let attempted = $state(false);
+	let aiReady = $state(false);
+	let aiOpen = $state(false);
+	let aiText = $state('');
+	let aiBusy = $state(false);
 
 	$effect(() => {
 		const initial: Record<string, unknown> = {};
@@ -56,6 +62,7 @@
 			}
 		}
 		void getMembers().then((m) => (members = m));
+		void getAiStatus().then((s) => (aiReady = s.licensed && s.configured));
 	});
 
 	const missing = (f: EntityField) =>
@@ -66,6 +73,31 @@
 
 	const inputType = (f: EntityField) =>
 		f.type === 'email' ? 'email' : f.type === 'url' ? 'url' : f.type === 'phone' ? 'tel' : 'text';
+
+	async function draft() {
+		if (!aiText.trim() || aiBusy) return;
+		aiBusy = true;
+		try {
+			const out = await aiDraft({ entity: def.name, text: aiText });
+			let applied = 0;
+			for (const [k, v] of Object.entries(out)) {
+				if (k in values) {
+					values[k] = v;
+					applied++;
+				}
+			}
+			toast.success(
+				applied
+					? `Drafted ${applied} field${applied === 1 ? '' : 's'} — review before saving`
+					: 'Nothing to fill in'
+			);
+			if (applied) aiOpen = false;
+		} catch (err) {
+			toast.error((err as { body?: { message?: string } })?.body?.message ?? 'AI draft failed');
+		} finally {
+			aiBusy = false;
+		}
+	}
 
 	async function submit(e: SubmitEvent) {
 		e.preventDefault();
@@ -99,6 +131,28 @@
 </script>
 
 <form class="space-y-4" onsubmit={submit}>
+	{#if aiReady}
+		{#if aiOpen}
+			<div class="rounded-lg border border-primary/30 bg-primary/5 p-3">
+				<Textarea
+					placeholder={`Describe the ${def.label.toLowerCase()} in words, e.g. "Jane at Acme, lead, jane@acme.com"`}
+					bind:value={aiText}
+					class="min-h-20 bg-background"
+				/>
+				<div class="mt-2 flex justify-end gap-2">
+					<Button variant="ghost" size="sm" onclick={() => (aiOpen = false)}>Cancel</Button>
+					<Button size="sm" onclick={draft} disabled={aiBusy || !aiText.trim()}>
+						<Sparkles class="size-4" />
+						{aiBusy ? 'Drafting…' : 'Draft fields'}
+					</Button>
+				</div>
+			</div>
+		{:else}
+			<Button type="button" variant="outline" size="sm" onclick={() => (aiOpen = true)}>
+				<Sparkles class="size-4" /> Draft with AI
+			</Button>
+		{/if}
+	{/if}
 	<Field.Group class="grid gap-4 sm:grid-cols-2">
 		{#each editable as f (f.key)}
 			<Field.Field class={cn(f.type === 'textarea' && 'sm:col-span-2')}>

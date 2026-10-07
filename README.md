@@ -21,7 +21,7 @@ Key differences from Frappe: static typed tables (no EAV/doc-permission rows), r
 
 ## Included infrastructure
 
-Multi-org auth (Better Auth), invitations, API keys, audit log, activity feed, inbox + email notifications, saved views, custom fields on any entity, workflows (`notify` / `create_record` actions), signed webhooks, and a config-only integrations SDK (`@base/integration-sdk`).
+Multi-org auth (Better Auth), invitations, API keys, audit log, activity feed, inbox + email notifications, saved views, custom fields on any entity, workflows (`notify` / `create_record` actions), signed webhooks, and a config-only integrations SDK (`@base/integration-sdk`). **Enterprise:** SSO/passkeys and a provider-agnostic AI layer (`AI_PROVIDER`/`AI_API_KEY`/`AI_MODEL` — record summaries, draft-from-text, ask-your-data) gated behind `BASE_ENTERPRISE_KEY` or Base Cloud.
 
 ## Quick start
 

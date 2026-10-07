@@ -3,6 +3,7 @@
 	import { Skeleton } from '#lib/components/ui/skeleton/index.js';
 	import AppSidebar from '#lib/components/app/app-sidebar.svelte';
 	import CommandPalette from '#lib/components/app/command-palette.svelte';
+	import TourGuide from '#lib/components/app/tour-guide.svelte';
 	import { ConfirmDeleteDialog } from '#lib/components/ui/confirm-delete-dialog/index.js';
 	import type { LayoutProps } from './$types';
 
@@ -46,4 +47,5 @@
 	</Sidebar.Inset>
 </Sidebar.Provider>
 <CommandPalette bind:open={paletteOpen} />
+<TourGuide userId={data.user.id} />
 <ConfirmDeleteDialog />

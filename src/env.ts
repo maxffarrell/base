@@ -57,5 +57,23 @@ export const variables = defineEnvVars({
 	CRON_SECRET: {
 		description: 'Bearer token for `/api/cron`, which runs due scheduled jobs for every workspace.',
 		schema: (value) => value || undefined
+	},
+	AI_PROVIDER: {
+		description:
+			"AI provider for enterprise features: 'openai' (or any OpenAI-compatible endpoint via AI_BASE_URL) or 'anthropic'.",
+		schema: (value) => (value ? (value as 'openai' | 'anthropic') : undefined)
+	},
+	AI_MODEL: {
+		description: 'Model name passed to the provider, e.g. `gpt-4o-mini` or `claude-haiku-4-5`.',
+		schema: (value) => value || undefined
+	},
+	AI_API_KEY: {
+		description: 'API key for the AI provider. Never sent to the browser.',
+		schema: (value) => value || undefined
+	},
+	AI_BASE_URL: {
+		description:
+			'Override the provider base URL, e.g. `http://localhost:11434/v1` for Ollama or a self-hosted gateway.',
+		schema: (value) => value || undefined
 	}
 });
