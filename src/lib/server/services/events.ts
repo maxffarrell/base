@@ -3,6 +3,8 @@ import { and, eq } from 'drizzle-orm';
 import { db } from '#lib/server/db/index.ts';
 import { activity, webhook } from '#lib/server/db/schema.ts';
 import { dispatchToIntegrations } from '#lib/server/integrations/runtime.ts';
+import { inboxForManagers } from '#lib/server/services/inbox.ts';
+import { getNotificationPrefs } from '#lib/server/services/notifications.ts';
 import { runWorkflows } from '#lib/server/services/workflows.ts';
 
 export type EventInput = {
@@ -41,6 +43,19 @@ export async function emit(e: EventInput) {
 	};
 
 	void deliverWebhooks(event).catch((err) => console.error('webhook delivery failed', err));
+	const noticeKey =
+		e.action === 'created' ? 'entity.created' : e.action === 'deleted' ? 'entity.deleted' : null;
+	if (noticeKey) {
+		void (async () => {
+			const prefs = await getNotificationPrefs(e.orgId);
+			if (prefs[noticeKey]) {
+				await inboxForManagers(e.orgId, noticeKey, e.entityId, {
+					title: e.summary,
+					href: e.action === 'deleted' ? `/${e.entityType}` : `/${e.entityType}/${e.entityId}`
+				});
+			}
+		})().catch((err) => console.error('inbox notification failed', err));
+	}
 	void dispatchToIntegrations(event).catch((err) =>
 		console.error('integration dispatch failed', err)
 	);
