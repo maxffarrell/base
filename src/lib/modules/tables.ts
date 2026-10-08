@@ -2,3 +2,4 @@
 export * from './directory/table.ts';
 export * from './projects/table.ts';
 export * from './billing/table.ts';
+export * from './inventory/table.ts';
