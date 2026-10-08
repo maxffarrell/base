@@ -100,6 +100,36 @@ export const bulkDeleteRecords = command(
 	}
 );
 
+/** Set one field on many records — per-record errors so hooks can block some. */
+export const bulkUpdateRecords = command(
+	v.object({
+		entity: entityName,
+		ids: v.pipe(v.array(v.string()), v.minLength(1), v.maxLength(200)),
+		input: recordInput
+	}),
+	async ({ entity, ids, input }) => {
+		const ctx = await requireOrg();
+		let updated = 0;
+		const failed: { id: string; error: string }[] = [];
+		for (const id of ids) {
+			try {
+				await updateRecord(ctx, entity, id, input);
+				updated++;
+			} catch (err) {
+				failed.push({
+					id,
+					error:
+						(err as { body?: { message?: string }; message?: string })?.body?.message ??
+						(err as Error)?.message ??
+						'Failed'
+				});
+			}
+		}
+		void listEntityRecords({ entity }).refresh();
+		return { updated, failed };
+	}
+);
+
 export const getRecordActivity = query(
 	v.object({ entity: entityName, id: v.string() }),
 	async ({ entity, id }) => {
