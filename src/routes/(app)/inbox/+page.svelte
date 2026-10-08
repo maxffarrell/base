@@ -7,11 +7,20 @@
 	import { getInboxPage, markInboxRead } from '#lib/remote/notifications.remote.ts';
 	import { formatRelative } from '#lib/format.ts';
 	import { cn } from '#lib/utils.js';
+	import { getEntityDef } from '#lib/entities.ts';
+	import '#lib/modules/index.ts';
 	import InboxIcon from '@lucide/svelte/icons/inbox';
 
 	const inbox = $derived(await getInboxPage());
 	let unreadOnly = $state(false);
-	const items = $derived(unreadOnly ? inbox.items.filter((n) => !n.readAt) : inbox.items);
+	let entityFilter = $state('');
+	const entityOf = (href?: string | null) => href?.split('/').filter(Boolean)[0] ?? '';
+	const kinds = $derived([...new Set(inbox.items.map((n) => entityOf(n.href)).filter(Boolean))]);
+	const items = $derived(
+		inbox.items.filter(
+			(n) => (!unreadOnly || !n.readAt) && (!entityFilter || entityOf(n.href) === entityFilter)
+		)
+	);
 
 	async function read(id: string, href?: string | null) {
 		await markInboxRead({ ids: [id] });
@@ -37,6 +46,22 @@
 			</Button>
 		{/if}
 	</div>
+	{#if kinds.length > 1}
+		<div class="flex flex-wrap gap-1.5">
+			<Button
+				size="sm"
+				variant={entityFilter === '' ? 'default' : 'outline'}
+				onclick={() => (entityFilter = '')}>All</Button
+			>
+			{#each kinds as k (k)}
+				<Button
+					size="sm"
+					variant={entityFilter === k ? 'default' : 'outline'}
+					onclick={() => (entityFilter = k)}>{getEntityDef(k)?.labelPlural ?? k}</Button
+				>
+			{/each}
+		</div>
+	{/if}
 	{#if inbox.items.length === 0}
 		<Empty.Root class="border">
 			<Empty.Header>
