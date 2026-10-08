@@ -9,6 +9,7 @@
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import Copy from '@lucide/svelte/icons/copy';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
+	import Link2 from '@lucide/svelte/icons/link-2';
 	import Printer from '@lucide/svelte/icons/printer';
 	import Star from '@lucide/svelte/icons/star';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
@@ -128,6 +129,17 @@
 						}}
 					>
 						<Star class={favQuery?.current ? 'fill-amber-400 text-amber-400' : ''} />
+					</Button>
+					<Button
+						variant="ghost"
+						size="sm"
+						aria-label="Copy link"
+						onclick={() => {
+							void navigator.clipboard.writeText(page.url.href);
+							toast.success('Link copied');
+						}}
+					>
+						<Link2 />
 					</Button>
 					{#if def.archivable}
 						<Button variant="outline" size="sm" onclick={() => toggleArchive(record)}>

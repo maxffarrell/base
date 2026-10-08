@@ -8,6 +8,7 @@ import {
 	bulkDelete,
 	createRecord,
 	deleteRecord,
+	entityReport,
 	getRecord,
 	linkOptions,
 	listRecords,
@@ -50,6 +51,19 @@ export const listEntityRecords = query(
 	async ({ entity, ...opts }) => {
 		const { orgId } = await requireOrg();
 		return listRecords(orgId, entity, opts);
+	}
+);
+
+/** Report builder: group-by counts + optional currency/number sum. */
+export const getEntityReport = query(
+	v.object({
+		entity: entityName,
+		groupBy: entityName,
+		sumField: v.optional(v.string())
+	}),
+	async ({ entity, groupBy, sumField }) => {
+		const { orgId } = await requireOrg();
+		return entityReport(orgId, entity, groupBy, sumField);
 	}
 );
 
