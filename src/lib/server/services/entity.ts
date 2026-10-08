@@ -318,10 +318,29 @@ export async function updateRecord(
 		entityType: name,
 		entityId: row.id,
 		action: 'updated',
-		summary: `${recordTitle(reg.def, row)} updated`
+		summary: `${recordTitle(reg.def, row)} updated`,
+		data: { changes: diffFields(reg.def, existing, row) }
 	});
 	emitAssigned(ctx, reg, row, existing);
 	return row;
+}
+
+/** Field-level {from,to} pairs for the activity timeline; scalar fields only. */
+function diffFields(
+	def: EntityDef,
+	before: EntityRecord,
+	after: EntityRecord
+): { field: string; from: string | null; to: string | null }[] {
+	const fmt = (v: unknown): string | null => {
+		if (v == null || v === '') return null;
+		if (v instanceof Date) return v.toISOString().slice(0, 10);
+		const s = String(v);
+		return s.length > 80 ? `${s.slice(0, 77)}…` : s;
+	};
+	return def.fields
+		.filter((f) => !f.readonly && f.type !== 'link' && fmt(before[f.key]) !== fmt(after[f.key]))
+		.slice(0, 12)
+		.map((f) => ({ field: f.label, from: fmt(before[f.key]), to: fmt(after[f.key]) }));
 }
 
 export async function deleteRecord(ctx: OrgContext, name: string, id: string) {

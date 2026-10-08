@@ -99,13 +99,25 @@
 						{#each docs as d (d.id)}
 							{@const Icon = icon(d.contentType)}
 							<li class="flex items-center gap-2 text-sm">
+								{#if d.contentType.startsWith('image/')}
+									<a href="/api/documents/{d.id}" target="_blank" rel="noopener" class="shrink-0">
+										<img
+											src="/api/documents/{d.id}"
+											alt={d.name}
+											class="size-10 rounded border object-cover"
+											loading="lazy"
+										/>
+									</a>
+								{/if}
 								<a
 									class="flex min-w-0 flex-1 items-center gap-2 font-medium hover:underline"
 									href="/api/documents/{d.id}"
 									target="_blank"
 									rel="noopener"
 								>
-									<Icon class="size-4 shrink-0 text-muted-foreground" />
+									{#if !d.contentType.startsWith('image/')}<Icon
+											class="size-4 shrink-0 text-muted-foreground"
+										/>{/if}
 									<span class="truncate">{d.name}</span>
 								</a>
 								<span class="shrink-0 text-xs text-muted-foreground tabular-nums"
