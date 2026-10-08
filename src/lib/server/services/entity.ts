@@ -99,8 +99,23 @@ export function updateInputSchema(def: EntityDef): v.GenericSchema {
 	}) as v.GenericSchema;
 }
 
-function validateInput(def: EntityDef, input: Record<string, unknown>): Record<string, unknown> {
-	const parsed = v.safeParse(inputSchema(def), input);
+function validateInput(
+	def: EntityDef,
+	input: Record<string, unknown>,
+	partial = false
+): Record<string, unknown> {
+	// Updates are partial: only provided keys are validated (required fields
+	// don't have to be resent, but a provided one must still pass its schema).
+	const schema = partial
+		? v.looseObject(
+				Object.fromEntries(
+					def.fields
+						.filter((f) => !f.readonly && f.key in input)
+						.map((f) => [f.key, fieldSchema(f)])
+				)
+			)
+		: inputSchema(def);
+	const parsed = v.safeParse(schema as v.GenericSchema, input);
 	if (!parsed.success) {
 		const first = parsed.issues[0];
 		error(422, `${first?.path?.[0]?.key ?? 'input'}: ${first?.message ?? 'invalid'}`);
@@ -235,7 +250,7 @@ async function write(
 	if (!existing)
 		for (const f of def.fields)
 			if (f.default !== undefined && transformed[f.key] == null) transformed[f.key] = f.default;
-	const data = validateInput(def, transformed);
+	const data = validateInput(def, transformed, !!existing);
 	checkTransition(def, data, existing);
 	const message = await hooks?.validate?.(ctx, data, opts);
 	if (typeof message === 'string') error(422, message);
