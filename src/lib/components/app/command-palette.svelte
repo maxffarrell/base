@@ -5,12 +5,19 @@
 	import type { SearchHit } from '#lib/server/services/search.ts';
 	import { allNav, mainNav } from './nav.ts';
 	import { isTypingTarget } from './keys.ts';
+	import { readRecents } from '#lib/recents.ts';
 	import Box from '@lucide/svelte/icons/box';
+	import History from '@lucide/svelte/icons/history';
 	import Plus from '@lucide/svelte/icons/plus';
 
 	let { open = $bindable(false) }: { open?: boolean } = $props();
 	let query = $state('');
 	let hits = $state<SearchHit[]>([]);
+	let recents = $state(readRecents());
+
+	$effect(() => {
+		if (open) recents = readRecents();
+	});
 	let pendingG = false;
 	let gTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -86,6 +93,20 @@
 						<span class="ml-auto truncate text-xs text-muted-foreground capitalize"
 							>{hit.subtitle}</span
 						>
+					</Command.Item>
+				{/each}
+			</Command.Group>
+		{/if}
+		{#if !query.trim() && recents.length}
+			<Command.Group heading="Recent">
+				{#each recents as r (r.entity + r.id)}
+					<Command.Item
+						value={`recent-${r.entity}-${r.id}`}
+						onSelect={() => go(`/${r.entity}/${r.id}`)}
+					>
+						<History />
+						<span class="truncate">{r.title}</span>
+						<span class="ml-auto truncate text-xs text-muted-foreground">{r.label}</span>
 					</Command.Item>
 				{/each}
 			</Command.Group>
