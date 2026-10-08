@@ -1,7 +1,7 @@
 import { createHmac } from 'node:crypto';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '#lib/server/db/index.ts';
-import { activity, webhook, webhookDelivery } from '#lib/server/db/schema.ts';
+import { activity, recordWatch, webhook, webhookDelivery } from '#lib/server/db/schema.ts';
 import { dispatchToIntegrations } from '#lib/server/integrations/runtime.ts';
 import { emailUsers, inboxForManagers, inboxForUsers } from '#lib/server/services/inbox.ts';
 import { getNotificationPrefs } from '#lib/server/services/notifications.ts';
@@ -43,6 +43,25 @@ export async function emit(e: EventInput) {
 	};
 
 	void deliverWebhooks(event).catch((err) => console.error('webhook delivery failed', err));
+	// Followers get an inbox item for every record event except their own actions.
+	void (async () => {
+		const watchers = await db
+			.select({ userId: recordWatch.userId })
+			.from(recordWatch)
+			.where(
+				and(
+					eq(recordWatch.organizationId, e.orgId),
+					eq(recordWatch.entityType, e.entityType),
+					eq(recordWatch.entityId, e.entityId)
+				)
+			);
+		const ids = watchers.map((w) => w.userId).filter((id) => id !== e.actorId);
+		if (ids.length)
+			await inboxForUsers(e.orgId, ids, 'watch', e.entityId, {
+				title: e.summary,
+				href: e.action === 'deleted' ? `/${e.entityType}` : `/${e.entityType}/${e.entityId}`
+			});
+	})().catch((err) => console.error('watch notification failed', err));
 	const noticeKey =
 		e.action === 'created' ? 'entity.created' : e.action === 'deleted' ? 'entity.deleted' : null;
 	if (noticeKey) {

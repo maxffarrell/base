@@ -6,7 +6,7 @@ import * as v from 'valibot';
 import { requireOrg } from '#lib/server/context.ts';
 import { recordTitle } from '#lib/entities.ts';
 import { db } from '#lib/server/db/index.ts';
-import { favorite } from '#lib/server/db/schema.ts';
+import { favorite, recordWatch } from '#lib/server/db/schema.ts';
 import { getEntity } from '#lib/server/entities/registry.ts';
 
 const entityName = v.pipe(v.string(), v.minLength(1), v.maxLength(60));
@@ -84,4 +84,63 @@ export const toggleFavorite = command(target, async ({ entity, id }) => {
 	void getFavorites().refresh();
 	void isFavorite({ entity, id }).refresh();
 	return { favorited: !existing };
+});
+
+/** Records the current user follows (gets inbox alerts on changes). */
+export const isWatching = query(target, async ({ entity, id }) => {
+	const { orgId, userId } = await requireOrg();
+	const [row] = await db
+		.select({ id: recordWatch.id })
+		.from(recordWatch)
+		.where(
+			and(
+				eq(recordWatch.organizationId, orgId),
+				eq(recordWatch.userId, userId),
+				eq(recordWatch.entityType, entity),
+				eq(recordWatch.entityId, id)
+			)
+		)
+		.limit(1);
+	return Boolean(row);
+});
+
+export const getWatcherCount = query(target, async ({ entity, id }) => {
+	const { orgId } = await requireOrg();
+	const rows = await db
+		.select({ userId: recordWatch.userId })
+		.from(recordWatch)
+		.where(
+			and(
+				eq(recordWatch.organizationId, orgId),
+				eq(recordWatch.entityType, entity),
+				eq(recordWatch.entityId, id)
+			)
+		);
+	return rows.length;
+});
+
+export const toggleWatch = command(target, async ({ entity, id }) => {
+	const { orgId, userId } = await requireOrg();
+	const [existing] = await db
+		.select({ id: recordWatch.id })
+		.from(recordWatch)
+		.where(
+			and(
+				eq(recordWatch.organizationId, orgId),
+				eq(recordWatch.userId, userId),
+				eq(recordWatch.entityType, entity),
+				eq(recordWatch.entityId, id)
+			)
+		)
+		.limit(1);
+	if (existing) {
+		await db.delete(recordWatch).where(eq(recordWatch.id, existing.id));
+	} else {
+		await db
+			.insert(recordWatch)
+			.values({ organizationId: orgId, userId, entityType: entity, entityId: id });
+	}
+	void isWatching({ entity, id }).refresh();
+	void getWatcherCount({ entity, id }).refresh();
+	return { watching: !existing };
 });
