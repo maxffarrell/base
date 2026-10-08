@@ -12,6 +12,7 @@
 	import * as Pagination from '#lib/components/ui/pagination/index.js';
 	import ArrowDown from '@lucide/svelte/icons/arrow-down';
 	import ArrowUp from '@lucide/svelte/icons/arrow-up';
+	import Archive from '@lucide/svelte/icons/archive';
 	import ArrowUpDown from '@lucide/svelte/icons/arrow-up-down';
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import Plus from '@lucide/svelte/icons/plus';
@@ -36,7 +37,8 @@
 		bulkUpdateRecords,
 		getLinkOptions,
 		importEntityRecords,
-		listEntityRecords
+		listEntityRecords,
+		setEntityArchived
 	} from '#lib/remote/entities.remote.ts';
 	import { getMembers } from '#lib/remote/workspace.remote.ts';
 	import { recordTitle } from '#lib/entities.ts';
@@ -57,6 +59,7 @@
 	let sort = $state<{ key: string; dir: 'asc' | 'desc' }>({ key: '', dir: 'asc' });
 	let pageNum = $state(1);
 	let selected = $state<Set<string>>(new Set());
+	let archivedOnly = $state(false);
 	let showNew = $state(false);
 	let linkTitles = $state<Record<string, Record<string, string>>>({});
 	let userNames = $state<Record<string, string>>({});
@@ -79,7 +82,7 @@
 	let view = $state<ViewKind>('table');
 	const kanbanQuery = $derived(
 		view === 'kanban' || view === 'calendar'
-			? listEntityRecords({ entity: def.name, q, filters, limit: 500 })
+			? listEntityRecords({ entity: def.name, q, filters, archivedOnly, limit: 500 })
 			: null
 	);
 
@@ -240,6 +243,7 @@
 			filters,
 			sort: sort.key || undefined,
 			dir: sort.dir,
+			archivedOnly,
 			limit: PAGE_SIZE,
 			offset: (pageNum - 1) * PAGE_SIZE
 		})
@@ -295,6 +299,22 @@
 	let bulkValue = $state('');
 	let bulkUpdating = $state(false);
 	const bulkFieldDef = $derived(bulkFields.find((f) => f.key === bulkField));
+
+	async function bulkArchive() {
+		const ids = [...selected];
+		let ok = 0;
+		for (const id of ids) {
+			try {
+				await setEntityArchived({ entity: def.name, id, archived: !archivedOnly });
+				ok++;
+			} catch (err) {
+				toast.error((err as { body?: { message?: string } })?.body?.message ?? 'Failed');
+			}
+		}
+		toast.success(`${archivedOnly ? 'Restored' : 'Archived'} ${ok}`);
+		selected = new Set();
+		await query.refresh();
+	}
 
 	async function applyBulkSet() {
 		if (!bulkFieldDef || bulkValue === '') return;
@@ -391,6 +411,18 @@
 				{/if}
 			</NativeSelect.Root>
 		{/each}
+		{#if def.archivable}
+			<label class="flex items-center gap-1.5 text-sm text-muted-foreground">
+				<Checkbox
+					checked={archivedOnly}
+					onCheckedChange={(v) => {
+						archivedOnly = v === true;
+						pageNum = 1;
+					}}
+				/>
+				Archived
+			</label>
+		{/if}
 		<div class="ml-auto flex items-center gap-2">
 			<ViewSwitcher {views} bind:value={view} />
 			<SavedViewsMenu page={def.name} current={viewState} onapply={applyView} />
@@ -546,6 +578,11 @@
 	onclear={() => (selected = new Set())}
 >
 	{#snippet actions()}
+		{#if def.archivable}
+			<Button variant="outline" size="sm" onclick={bulkArchive}
+				><Archive class="size-4" /> {archivedOnly ? 'Restore' : 'Archive'}</Button
+			>
+		{/if}
 		{#if bulkFields.length}
 			<Button variant="outline" size="sm" onclick={() => (showBulkSet = true)}
 				><Pencil class="size-4" /> Set field</Button

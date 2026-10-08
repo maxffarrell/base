@@ -4,6 +4,8 @@
 	import { toast } from 'svelte-sonner';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
+	import Archive from '@lucide/svelte/icons/archive';
+	import ArchiveRestore from '@lucide/svelte/icons/archive-restore';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import Copy from '@lucide/svelte/icons/copy';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
@@ -24,7 +26,8 @@
 		deleteEntityRecord,
 		getEntityRecord,
 		getRecordActivity,
-		getRelatedRecords
+		getRelatedRecords,
+		setEntityArchived
 	} from '#lib/remote/entities.remote.ts';
 
 	const def = $derived(getEntityDef(page.params.entity ?? ''));
@@ -49,6 +52,17 @@
 			copy[def.titleField] = `${copy[def.titleField]} (copy)`;
 		return copy;
 	});
+
+	async function toggleArchive(record: Record<string, unknown>) {
+		if (!def) return;
+		try {
+			await setEntityArchived({ entity: def.name, id, archived: !record.archivedAt });
+			toast.success(record.archivedAt ? `${def.label} restored` : `${def.label} archived`);
+			await recordQuery?.refresh();
+		} catch (err) {
+			toast.error((err as { body?: { message?: string } })?.body?.message ?? 'Failed');
+		}
+	}
 
 	async function summarize() {
 		if (!def || aiBusy) return;
@@ -94,6 +108,11 @@
 			{#snippet actions()}
 				<Button variant="ghost" size="sm" href={`/${def.name}`}><ArrowLeft /> Back</Button>
 				{#if record}
+					{#if def.archivable}
+						<Button variant="outline" size="sm" onclick={() => toggleArchive(record)}>
+							{#if record.archivedAt}<ArchiveRestore /> Restore{:else}<Archive /> Archive{/if}
+						</Button>
+					{/if}
 					{#if aiStatus.licensed && aiStatus.configured}
 						<Button variant="outline" size="sm" onclick={summarize} disabled={aiBusy}
 							><Sparkles class="size-4" /> {aiBusy ? 'Summarizing…' : 'Summarize'}</Button
@@ -111,6 +130,11 @@
 		</PageHeader>
 
 		{#if record}
+			{#if record.archivedAt}
+				<div class="border-b bg-muted/50 px-4 py-2 text-sm text-muted-foreground">
+					This {def.label.toLowerCase()} is archived — it is hidden from lists until restored.
+				</div>
+			{/if}
 			<div class="grid gap-4 p-4 lg:grid-cols-[1fr_320px]">
 				<div class="space-y-4">
 					<Card.Root>

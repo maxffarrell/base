@@ -4,7 +4,7 @@
  * actions; every mutation runs the entity's hook lifecycle and emits an event
  * (activity feed + webhooks + workflows + integrations fan out from there).
  */
-import { and, asc, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
 import type { EntityDef, EntityField } from '#lib/entities.ts';
@@ -25,6 +25,8 @@ export type ListOptions = {
 	dir?: 'asc' | 'desc';
 	limit?: number;
 	offset?: number;
+	/** archivable entities only: list archived records instead of active ones. */
+	archivedOnly?: boolean;
 };
 
 function fieldSchema(f: EntityField): v.GenericSchema {
@@ -98,11 +100,13 @@ function checkTransition(def: EntityDef, input: Record<string, unknown>, existin
 export async function listRecords(
 	orgId: string,
 	name: string,
-	{ q, filters, sort, dir, limit = 50, offset = 0 }: ListOptions = {}
+	{ q, filters, sort, dir, limit = 50, offset = 0, archivedOnly }: ListOptions = {}
 ) {
 	const reg = getEntity(name);
 	const { def, table } = reg;
 	const conds = [eq(table.organizationId, orgId)];
+	if (def.archivable && table.archivedAt)
+		conds.push(archivedOnly ? isNotNull(table.archivedAt) : isNull(table.archivedAt));
 
 	const searchKeys = def.searchFields ?? [def.titleField ?? 'name'];
 	if (q?.trim()) {
@@ -253,6 +257,29 @@ export async function deleteRecord(ctx: OrgContext, name: string, id: string) {
 		summary: `${recordTitle(reg.def, existing)} deleted`
 	});
 	return row;
+}
+
+/** Archive/restore an archivable record — emits a dedicated activity action. */
+export async function setArchived(ctx: OrgContext, name: string, id: string, archived: boolean) {
+	const reg = getEntity(name);
+	if (!reg.def.archivable || !reg.table.archivedAt)
+		error(422, `${reg.def.label} records cannot be archived`);
+	await getRecord(ctx.orgId, name, id);
+	const [row] = await db
+		.update(reg.table)
+		.set({ archivedAt: archived ? new Date() : null })
+		.where(and(eq(reg.table.organizationId, ctx.orgId), eq(reg.table.id, id)))
+		.returning();
+	if (!row) error(404, `${reg.def.label} not found`);
+	emit({
+		orgId: ctx.orgId,
+		actorId: ctx.userId,
+		entityType: name,
+		entityId: id,
+		action: archived ? 'archived' : 'restored',
+		summary: `${recordTitle(reg.def, row as EntityRecord)} ${archived ? 'archived' : 'restored'}`
+	});
+	return row as EntityRecord;
 }
 
 export async function bulkDelete(ctx: OrgContext, name: string, ids: string[]) {

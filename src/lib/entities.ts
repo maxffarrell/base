@@ -64,6 +64,9 @@ export type EntityDef = {
 	/** Field used as a record's display title; defaults to `name` or the first text field. */
 	titleField?: string;
 	defaultSort?: { key: string; dir: 'asc' | 'desc' };
+	/** Records can be archived instead of deleted — requires an `archivedAt`
+	 * timestamp column on the entity's table. */
+	archivable?: boolean;
 	/** Custom component escape hatches (Frappe struggles to offer this cleanly). */
 	listComponent?: Component;
 	formComponent?: Component;

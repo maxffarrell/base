@@ -22,6 +22,13 @@
       "when": 1791410319967,
       "tag": "0002_purple_grim_reaper",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791419077005,
+      "tag": "0003_loose_lightspeed",
+      "breakpoints": true
     }
   ]
 }

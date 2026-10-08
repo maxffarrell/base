@@ -9,6 +9,7 @@ import { defineEntity } from '#lib/entities.ts';
 
 defineEntity({
 	name: 'company',
+	archivable: true,
 	label: 'Company',
 	labelPlural: 'Companies',
 	description: 'Organizations you do business with',
@@ -34,6 +35,7 @@ defineEntity({
 
 defineEntity({
 	name: 'contact',
+	archivable: true,
 	label: 'Contact',
 	labelPlural: 'Contacts',
 	description: 'People at your companies',

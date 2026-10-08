@@ -11,6 +11,7 @@ import {
 	getRecord,
 	linkOptions,
 	listRecords,
+	setArchived,
 	updateRecord
 } from '#lib/server/services/entity.ts';
 
@@ -28,6 +29,7 @@ export const getEntities = query(async () => {
 		searchFields: d.searchFields,
 		titleField: d.titleField,
 		defaultSort: d.defaultSort,
+		archivable: d.archivable,
 		hasListComponent: !!d.listComponent,
 		hasFormComponent: !!d.formComponent,
 		hasViewComponent: !!d.viewComponent
@@ -42,7 +44,8 @@ export const listEntityRecords = query(
 		sort: v.optional(v.string()),
 		dir: v.optional(v.picklist(['asc', 'desc'])),
 		limit: v.optional(v.number()),
-		offset: v.optional(v.number())
+		offset: v.optional(v.number()),
+		archivedOnly: v.optional(v.boolean())
 	}),
 	async ({ entity, ...opts }) => {
 		const { orgId } = await requireOrg();
@@ -78,6 +81,16 @@ export const updateEntityRecord = command(
 	async ({ entity, id, input }) => {
 		const ctx = await requireOrg();
 		return updateRecord(ctx, entity, id, input);
+	}
+);
+
+export const setEntityArchived = command(
+	v.object({ entity: entityName, id: v.string(), archived: v.boolean() }),
+	async ({ entity, id, archived }) => {
+		const ctx = await requireOrg();
+		const row = await setArchived(ctx, entity, id, archived);
+		void listEntityRecords({ entity }).refresh();
+		return row;
 	}
 );
 

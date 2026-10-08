@@ -11,6 +11,7 @@ export const directoryCompany = pgTable(
 		website: text('website'),
 		phone: text('phone'),
 		notes: text('notes'),
+		archivedAt: timestamp('archived_at', { withTimezone: true }),
 		...timestamps
 	},
 	(t) => [index('directory_company_org_idx').on(t.organizationId, t.name)]
