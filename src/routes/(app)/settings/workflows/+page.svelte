@@ -31,7 +31,8 @@
 
 	const ACTION_LABELS: Record<(typeof WORKFLOW_ACTIONS)[number], string> = {
 		notify: 'Notify the team',
-		create_record: 'Create a record'
+		create_record: 'Create a record',
+		set_field: 'Set a field'
 	};
 
 	const PRESETS = [
@@ -66,6 +67,12 @@
 	let message = $state('');
 	let recordEntity = $state('');
 	let recordTitle = $state('');
+	let setField = $state('');
+	let setValue = $state('');
+	const setTarget = $derived(eventType.trim().split('.')[0] ?? '');
+	const setFields = $derived(
+		(entities.find((e) => e.name === setTarget)?.fields ?? []).filter((f) => !f.readonly)
+	);
 	let saving = $state(false);
 
 	const titleField = $derived(entities.find((e) => e.name === recordEntity)?.titleField ?? 'name');
@@ -85,12 +92,16 @@
 					message: action === 'notify' ? message.trim() || null : null,
 					entity: action === 'create_record' ? recordEntity : null,
 					[`field.${titleField}`]:
-						action === 'create_record' ? recordTitle.trim() || '{summary}' : null
+						action === 'create_record' ? recordTitle.trim() || '{summary}' : null,
+					field: action === 'set_field' ? setField : null,
+					value: action === 'set_field' ? setValue.trim() || null : null
 				}
 			});
 			name = '';
 			message = '';
 			recordTitle = '';
+			setField = '';
+			setValue = '';
 			toast.success('Rule added');
 		} catch (e) {
 			toast.error((e as { body?: { message?: string } })?.body?.message ?? 'Could not save rule');
@@ -104,7 +115,9 @@
 			? r.config.message
 				? `Message: “${r.config.message}”`
 				: 'Inbox + email to owner/admin'
-			: `New ${r.config.entity ?? '?'} record`;
+			: r.action === 'set_field'
+				? `Set ${r.config.field ?? '?'} to “${r.config.value ?? '—'}”`
+				: `New ${r.config.entity ?? '?'} record`;
 </script>
 
 <Card.Root>
@@ -235,6 +248,29 @@
 											class="h-8 max-w-md text-sm"
 											bind:value={message}
 											aria-label="Notification message"
+										/>
+									</div>
+								{:else if action === 'set_field'}
+									<div class="mt-2 flex flex-wrap items-center gap-2">
+										<NativeSelect.Root
+											aria-label="Field to set"
+											size="sm"
+											bind:value={setField}
+											class="w-44"
+										>
+											<NativeSelect.Option value="" disabled
+												>{setTarget ? 'Field' : 'Set “when” first'}</NativeSelect.Option
+											>
+											{#each setFields as f (f.key)}
+												<NativeSelect.Option value={f.key}>{f.label}</NativeSelect.Option>
+											{/each}
+										</NativeSelect.Root>
+										<span class="text-xs text-muted-foreground">to</span>
+										<Input
+											placeholder={'Value — {summary} and {event} are filled in'}
+											class="h-8 w-64 text-sm"
+											bind:value={setValue}
+											aria-label="Value to set"
 										/>
 									</div>
 								{:else}
