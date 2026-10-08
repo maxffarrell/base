@@ -8,7 +8,11 @@
 	import * as NativeSelect from '#lib/components/ui/native-select/index.js';
 	import MoneyInput from '#lib/components/app/money-input.svelte';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
-	import type { EntityDef, EntityField } from '#lib/entities.ts';
+	import { getEntityDef, type EntityDef, type EntityField } from '#lib/entities.ts';
+	import Plus from '@lucide/svelte/icons/plus';
+	import * as Modal from '#lib/components/ui/modal/index.js';
+	// Self-import enables the recursive "new linked record" form.
+	import EntityForm from './entity-form.svelte';
 	import { aiDraft, getAiStatus } from '#lib/remote/ai.remote.ts';
 	import {
 		createEntityRecord,
@@ -45,12 +49,15 @@
 	let aiOpen = $state(false);
 	let aiText = $state('');
 	let aiBusy = $state(false);
+	let linkNew = $state<EntityDef | null>(null);
+	let linkNewField = $state('');
 
 	$effect(() => {
 		const initial: Record<string, unknown> = {};
 		for (const f of editable) {
 			const v = record?.[f.key];
 			if (v != null) initial[f.key] = v;
+			else if (f.default !== undefined) initial[f.key] = f.default;
 			else if (f.type === 'boolean') initial[f.key] = false;
 			else if (f.type === 'select' && f.options?.length)
 				initial[f.key] = record ? '' : f.options[0];
@@ -205,12 +212,27 @@
 						{/each}
 					</NativeSelect.Root>
 				{:else if f.type === 'link'}
-					<NativeSelect.Root id="ef-{f.key}" bind:value={values[f.key] as string}>
-						<NativeSelect.Option value="">—</NativeSelect.Option>
-						{#each linkChoices[f.key] ?? [] as o (o.id)}
-							<NativeSelect.Option value={o.id}>{o.title}</NativeSelect.Option>
-						{/each}
-					</NativeSelect.Root>
+					<div class="flex gap-1">
+						<NativeSelect.Root id="ef-{f.key}" class="flex-1" bind:value={values[f.key] as string}>
+							<NativeSelect.Option value="">—</NativeSelect.Option>
+							{#each linkChoices[f.key] ?? [] as o (o.id)}
+								<NativeSelect.Option value={o.id}>{o.title}</NativeSelect.Option>
+							{/each}
+						</NativeSelect.Root>
+						{#if f.linkTo && getEntityDef(f.linkTo)}
+							<Button
+								type="button"
+								variant="outline"
+								size="icon"
+								class="shrink-0"
+								aria-label="New {getEntityDef(f.linkTo)?.label}"
+								onclick={() => {
+									linkNew = getEntityDef(f.linkTo!) ?? null;
+									linkNewField = f.key;
+								}}><Plus /></Button
+							>
+						{/if}
+					</div>
 				{:else if f.type === 'user'}
 					<NativeSelect.Root id="ef-{f.key}" bind:value={values[f.key] as string}>
 						<NativeSelect.Option value="">—</NativeSelect.Option>
@@ -249,3 +271,20 @@
 		>
 	</div>
 </form>
+
+<Modal.Root open={!!linkNew} onOpenChange={(v) => !v && (linkNew = null)}>
+	<Modal.Content class="max-h-[90dvh] overflow-y-auto sm:max-w-xl">
+		<Modal.Header><Modal.Title>New {linkNew?.label}</Modal.Title></Modal.Header>
+		{#if linkNew}
+			<EntityForm
+				def={linkNew}
+				onsaved={(r: Record<string, unknown>) => {
+					const key = linkNewField;
+					void getLinkOptions(linkNew!.name).then((opts) => (linkChoices[key] = opts));
+					values[key] = r.id;
+					linkNew = null;
+				}}
+			/>
+		{/if}
+	</Modal.Content>
+</Modal.Root>

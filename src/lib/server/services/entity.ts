@@ -54,6 +54,15 @@ function fieldSchema(f: EntityField): v.GenericSchema {
 		default:
 			s = v.pipe(v.string(), v.maxLength(2000));
 	}
+	if (f.min !== undefined)
+		s = v.pipe(s as v.GenericSchema<number>, v.minValue(f.min, `${f.label} must be ≥ ${f.min}`));
+	if (f.max !== undefined)
+		s = v.pipe(s as v.GenericSchema<number>, v.maxValue(f.max, `${f.label} must be ≤ ${f.max}`));
+	if (f.pattern && f.type !== 'number' && f.type !== 'currency' && f.type !== 'boolean')
+		s = v.pipe(
+			s as v.GenericSchema<string>,
+			v.regex(new RegExp(f.pattern), `${f.label} is invalid`)
+		);
 	if (f.required)
 		return f.type === 'boolean' || f.type === 'number' || f.type === 'currency'
 			? s
@@ -204,7 +213,14 @@ async function write(
 	const { def, table, hooks } = reg;
 	const opts = { existing };
 
+	if (def.adminOnly && ctx.role === 'member')
+		error(403, `Only admins can modify ${def.labelPlural}`);
+
 	const transformed = (await hooks?.beforeValidate?.(ctx, input, opts)) ?? input;
+	// Field defaults apply on create only.
+	if (!existing)
+		for (const f of def.fields)
+			if (f.default !== undefined && transformed[f.key] == null) transformed[f.key] = f.default;
 	const data = validateInput(def, transformed);
 	checkTransition(def, data, existing);
 	const message = await hooks?.validate?.(ctx, data, opts);
@@ -310,6 +326,8 @@ export async function updateRecord(
 
 export async function deleteRecord(ctx: OrgContext, name: string, id: string) {
 	const reg = getEntity(name);
+	if (reg.def.adminOnly && ctx.role === 'member')
+		error(403, `Only admins can delete ${reg.def.labelPlural}`);
 	const existing = await getRecord(ctx.orgId, name, id);
 	await reg.hooks?.onDelete?.(ctx, existing);
 	const [row] = await db
@@ -333,6 +351,8 @@ export async function setArchived(ctx: OrgContext, name: string, id: string, arc
 	const reg = getEntity(name);
 	if (!reg.def.archivable || !reg.table.archivedAt)
 		error(422, `${reg.def.label} records cannot be archived`);
+	if (reg.def.adminOnly && ctx.role === 'member')
+		error(403, `Only admins can modify ${reg.def.labelPlural}`);
 	await getRecord(ctx.orgId, name, id);
 	const [row] = await db
 		.update(reg.table)
@@ -353,6 +373,8 @@ export async function setArchived(ctx: OrgContext, name: string, id: string, arc
 
 export async function bulkDelete(ctx: OrgContext, name: string, ids: string[]) {
 	const reg = getEntity(name);
+	if (reg.def.adminOnly && ctx.role === 'member')
+		error(403, `Only admins can delete ${reg.def.labelPlural}`);
 	for (const id of ids) {
 		const existing = await getRecord(ctx.orgId, name, id);
 		await reg.hooks?.onDelete?.(ctx, existing);

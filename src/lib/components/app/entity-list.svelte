@@ -82,6 +82,7 @@
 	let selected = $state<Set<string>>(new Set());
 	let archivedOnly = $state(false);
 	let showNew = $state(false);
+	const canWrite = $derived(!def.adminOnly || page.data.role !== 'member');
 	let linkTitles = $state<Record<string, Record<string, string>>>({});
 	let userNames = $state<Record<string, string>>({});
 
@@ -241,7 +242,7 @@
 	let appliedDefault = false;
 	$effect(() => {
 		if (def.defaultSort && !sort.key) sort = { ...def.defaultSort };
-		if (page.url.searchParams.get('new') === '1') showNew = true;
+		if (page.url.searchParams.get('new') === '1' && canWrite) showNew = true;
 		let hasUrlFilters = false;
 		for (const [k, v] of page.url.searchParams)
 			if (k.startsWith('filter_')) {
@@ -405,7 +406,9 @@
 		<Button size="sm" variant="outline" onclick={() => (showImport = true)}
 			><Upload /> Import</Button
 		>
-		<Button size="sm" onclick={() => (showNew = true)}><Plus /> New {def.label}</Button>
+		{#if canWrite}
+			<Button size="sm" onclick={() => (showNew = true)}><Plus /> New {def.label}</Button>
+		{/if}
 	{/snippet}
 </PageHeader>
 
@@ -500,7 +503,9 @@
 					>
 				</Empty.Header>
 				<Empty.Content
-					><Button size="sm" onclick={() => (showNew = true)}><Plus /> New {def.label}</Button
+					>{#if canWrite}<Button size="sm" onclick={() => (showNew = true)}
+							><Plus /> New {def.label}</Button
+						>{/if}
 					></Empty.Content
 				>
 			</Empty.Root>

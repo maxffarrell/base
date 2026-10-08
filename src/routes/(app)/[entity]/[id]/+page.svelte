@@ -53,6 +53,7 @@
 	const members = $derived(await getMembers());
 	let shareTarget = $state('');
 	const meId = $derived(page.data.user?.id ?? '');
+	const canWrite = $derived(!def?.adminOnly || page.data.role !== 'member');
 	const shareableMembers = $derived(
 		members.filter(
 			(m) => m.userId !== meId && !sharesQuery?.current?.some((s) => s.toUserId === m.userId)
@@ -158,7 +159,7 @@
 					<Button variant="ghost" size="sm" aria-label="Share" onclick={() => (showShare = true)}>
 						<Share2 />
 					</Button>
-					{#if def.archivable}
+					{#if def.archivable && canWrite}
 						<Button variant="outline" size="sm" onclick={() => toggleArchive(record)}>
 							{#if record.archivedAt}<ArchiveRestore /> Restore{:else}<Archive /> Archive{/if}
 						</Button>
@@ -171,10 +172,12 @@
 					<Button variant="outline" size="sm" href={`/print/${def.name}/${id}`} target="_blank"
 						><Printer /> Print</Button
 					>
-					<Button variant="outline" size="sm" onclick={() => (showDup = true)}
-						><Copy /> Duplicate</Button
-					>
-					<Button variant="destructive" size="sm" onclick={remove}><Trash2 /> Delete</Button>
+					{#if canWrite}
+						<Button variant="outline" size="sm" onclick={() => (showDup = true)}
+							><Copy /> Duplicate</Button
+						>
+						<Button variant="destructive" size="sm" onclick={remove}><Trash2 /> Delete</Button>
+					{/if}
 				{/if}
 			{/snippet}
 		</PageHeader>
