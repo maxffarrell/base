@@ -162,7 +162,7 @@ export async function listRecords(
 		const col = table[key];
 		if (!field || !col || value === '' || value == null) continue;
 		if (field.type === 'tags') {
-			conds.push(sql`${col}::text[] @> ${[value]}::text[]`);
+			conds.push(sql`${col}::text[] @> ARRAY[${value}]::text[]`);
 			continue;
 		}
 		conds.push(eq(col, field.type === 'boolean' ? value === 'true' : value));
@@ -260,7 +260,8 @@ async function write(
 			if (f.default !== undefined && transformed[f.key] == null) transformed[f.key] = f.default;
 	const data = validateInput(def, transformed, !!existing);
 	checkTransition(def, data, existing);
-	const message = await hooks?.validate?.(ctx, data, opts);
+	const effective = existing ? ({ ...existing, ...data } as EntityRecord) : data;
+	const message = await hooks?.validate?.(ctx, effective, opts);
 	if (typeof message === 'string') error(422, message);
 	await hooks?.beforeSave?.(ctx, data, opts);
 
