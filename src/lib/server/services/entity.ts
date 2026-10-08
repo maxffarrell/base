@@ -355,10 +355,17 @@ export async function createRecord(
 		summary: `${recordTitle(reg.def, row)} created`
 	});
 	// Creators auto-follow their records so later changes reach their inbox.
-	await db
-		.insert(recordWatch)
-		.values({ organizationId: ctx.orgId, userId: ctx.userId, entityType: name, entityId: row.id })
-		.onConflictDoNothing();
+	// Skipped for workflow/system writes (no real actor to notify).
+	if (ctx.userId)
+		await db
+			.insert(recordWatch)
+			.values({
+				organizationId: ctx.orgId,
+				userId: ctx.userId,
+				entityType: name,
+				entityId: row.id
+			})
+			.onConflictDoNothing();
 	emitAssigned(ctx, reg, row);
 	return row;
 }

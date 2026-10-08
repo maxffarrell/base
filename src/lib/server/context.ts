@@ -7,6 +7,7 @@ import { member, organization } from '#lib/server/db/schema.ts';
 export type Role = 'owner' | 'admin' | 'member';
 
 export type OrgContext = {
+	/** Real user id, or '' for system/workflow-triggered writes (emit stores null). */
 	userId: string;
 	orgId: string;
 	role: Role;
