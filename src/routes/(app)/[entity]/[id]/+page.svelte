@@ -7,6 +7,7 @@
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import Copy from '@lucide/svelte/icons/copy';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
+	import Printer from '@lucide/svelte/icons/printer';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import * as Modal from '#lib/components/ui/modal/index.js';
 	import { aiSummarize, getAiStatus } from '#lib/remote/ai.remote.ts';
@@ -98,6 +99,9 @@
 							><Sparkles class="size-4" /> {aiBusy ? 'Summarizing…' : 'Summarize'}</Button
 						>
 					{/if}
+					<Button variant="outline" size="sm" href={`/print/${def.name}/${id}`} target="_blank"
+						><Printer /> Print</Button
+					>
 					<Button variant="outline" size="sm" onclick={() => (showDup = true)}
 						><Copy /> Duplicate</Button
 					>
