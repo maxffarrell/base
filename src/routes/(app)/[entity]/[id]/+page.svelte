@@ -37,6 +37,7 @@
 	import { getMembers } from '#lib/remote/workspace.remote.ts';
 	import * as NativeSelect from '#lib/components/ui/native-select/index.js';
 	import { pushRecent } from '#lib/recents.ts';
+	import { isTypingTarget } from '#lib/components/app/keys.ts';
 
 	const def = $derived(getEntityDef(page.params.entity ?? ''));
 	const id = $derived(page.params.id ?? '');
@@ -53,6 +54,19 @@
 	const members = $derived(await getMembers());
 	let shareTarget = $state('');
 	const meId = $derived(page.data.user?.id ?? '');
+
+	async function star() {
+		const res = await toggleFavorite({ entity: def!.name, id });
+		toast.success(res.favorited ? 'Starred' : 'Unstarred');
+	}
+
+	function onkey(e: KeyboardEvent) {
+		if (!recordQuery?.current || e.metaKey || e.ctrlKey || e.altKey || isTypingTarget(e.target))
+			return;
+		if (e.key === 's') void star();
+		else if (e.key === 'p') void goto(`/print/${def!.name}/${id}`);
+		else if (e.key === 'd') showDup = true;
+	}
 	const canWrite = $derived(!def?.adminOnly || page.data.role !== 'member');
 	const shareableMembers = $derived(
 		members.filter(
@@ -122,6 +136,8 @@
 	}
 </script>
 
+<svelte:window onkeydown={onkey} />
+
 {#if def}
 	{#await recordQuery then record}
 		<PageHeader
@@ -134,15 +150,7 @@
 			{#snippet actions()}
 				<Button variant="ghost" size="sm" href={`/${def.name}`}><ArrowLeft /> Back</Button>
 				{#if record}
-					<Button
-						variant="ghost"
-						size="sm"
-						aria-label="Toggle star"
-						onclick={async () => {
-							const res = await toggleFavorite({ entity: def.name, id });
-							toast.success(res.favorited ? 'Starred' : 'Unstarred');
-						}}
-					>
+					<Button variant="ghost" size="sm" aria-label="Toggle star" onclick={star}>
 						<Star class={favQuery?.current ? 'fill-amber-400 text-amber-400' : ''} />
 					</Button>
 					<Button

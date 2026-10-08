@@ -172,6 +172,10 @@
 				<span>New record (on a list)</span><Kbd>N</Kbd>
 			</li>
 			<li class="flex justify-between py-2">
+				<span>Star / print / duplicate (on a record)</span>
+				<span class="text-muted-foreground"><Kbd>S</Kbd> <Kbd>P</Kbd> <Kbd>D</Kbd></span>
+			</li>
+			<li class="flex justify-between py-2">
 				<span>This help</span><Kbd>?</Kbd>
 			</li>
 		</ul>
