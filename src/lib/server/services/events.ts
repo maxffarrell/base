@@ -113,27 +113,34 @@ async function deliverWebhooks(event: BaseEvent) {
 	await Promise.allSettled(
 		hooks
 			.filter((h) => h.events.includes('*') || h.events.includes(event.type))
-			.map(async (h) => {
-				const body = JSON.stringify(event);
-				let status = 0;
-				try {
-					const res = await fetch(h.url, {
-						method: 'POST',
-						headers: {
-							'content-type': 'application/json',
-							'x-base-event': event.type,
-							'x-base-signature': signPayload(h.secret, body)
-						},
-						body,
-						signal: AbortSignal.timeout(10_000)
-					});
-					status = res.status;
-				} finally {
-					await db
-						.update(webhook)
-						.set({ lastDeliveryAt: new Date(), lastDeliveryStatus: status })
-						.where(eq(webhook.id, h.id));
-				}
-			})
+			.map((h) => deliverToHook(h, event))
 	);
+}
+
+/** Posts one event payload to a single webhook and records the delivery status. */
+export async function deliverToHook(
+	h: typeof webhook.$inferSelect,
+	event: BaseEvent
+): Promise<number> {
+	const body = JSON.stringify(event);
+	let status = 0;
+	try {
+		const res = await fetch(h.url, {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json',
+				'x-base-event': event.type,
+				'x-base-signature': signPayload(h.secret, body)
+			},
+			body,
+			signal: AbortSignal.timeout(10_000)
+		});
+		status = res.status;
+	} finally {
+		await db
+			.update(webhook)
+			.set({ lastDeliveryAt: new Date(), lastDeliveryStatus: status })
+			.where(eq(webhook.id, h.id));
+	}
+	return status;
 }

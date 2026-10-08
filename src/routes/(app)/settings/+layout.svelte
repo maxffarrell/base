@@ -18,7 +18,8 @@
 		{ href: '/settings/security', label: 'Security' },
 		{ href: '/settings/integrations', label: 'Integrations' },
 		{ href: '/settings/webhooks', label: 'Webhooks' },
-		{ href: '/settings/api-keys', label: 'API keys' }
+		{ href: '/settings/api-keys', label: 'API keys' },
+		{ href: '/settings/data', label: 'Data' }
 	];
 	const current = $derived(tabs.find((t) => t.href === page.url.pathname) ?? tabs[0]!);
 	const lockedInDemo = [
