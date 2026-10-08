@@ -34,6 +34,32 @@
 		create_record: 'Create a record'
 	};
 
+	const PRESETS = [
+		{ name: 'Notify on any change', eventType: '*', action: 'notify' as const, message: '' },
+		{
+			name: 'Ping team on new records',
+			eventType: 'task.created',
+			action: 'notify' as const,
+			message: 'New task — check assignments'
+		},
+		{
+			name: 'Log a task on new contacts',
+			eventType: 'contact.created',
+			action: 'create_record' as const,
+			entity: 'task',
+			title: 'Follow up: {summary}'
+		}
+	];
+
+	function applyPreset(p: (typeof PRESETS)[number]) {
+		name = p.name;
+		eventType = p.eventType;
+		action = p.action;
+		message = 'message' in p ? (p.message ?? '') : '';
+		if ('entity' in p && p.entity) recordEntity = p.entity;
+		if ('title' in p && p.title) recordTitle = p.title;
+	}
+
 	let name = $state('');
 	let eventType = $state('');
 	let action = $state<(typeof WORKFLOW_ACTIONS)[number]>('notify');
@@ -156,6 +182,19 @@
 						>
 					{/each}
 					{#if isAdmin}
+						<Table.Row class="border-dashed bg-muted/30 hover:bg-muted/30">
+							<Table.Cell colspan={6} class="pb-0">
+								<div class="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+									From a template:
+									{#each PRESETS as p (p.name)}
+										<button
+											class="rounded-full border px-2 py-0.5 hover:bg-accent"
+											onclick={() => applyPreset(p)}>{p.name}</button
+										>
+									{/each}
+								</div>
+							</Table.Cell>
+						</Table.Row>
 						<Table.Row class="border-dashed bg-muted/30 hover:bg-muted/30">
 							<Table.Cell colspan={6}>
 								<div class="flex flex-wrap items-center gap-2">
