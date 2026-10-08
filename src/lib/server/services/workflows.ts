@@ -9,7 +9,7 @@ import type { workflowInput, workflowUpdate } from '#lib/schemas.ts';
 import type { BaseEvent } from '#lib/server/services/events.ts';
 import { inboxForManagers } from '#lib/server/services/inbox.ts';
 import { getNotificationPrefs } from '#lib/server/services/notifications.ts';
-import { createRecord } from '#lib/server/services/entity.ts';
+import { createRecord, updateRecord } from '#lib/server/services/entity.ts';
 import { error } from '@sveltejs/kit';
 
 type Out<T extends v.GenericSchema> = v.InferOutput<T>;
@@ -72,6 +72,8 @@ async function managerEmails(orgId: string) {
 
 /** True while a create_record action is executing; suppresses nested runs. */
 let creatingRecord = false;
+/** True while a set_field action is executing; suppresses nested runs. */
+let settingField = false;
 
 /** Runs every enabled rule matching the event; called from emit() (fire-and-forget). */
 export async function runWorkflows(event: BaseEvent) {
@@ -104,6 +106,29 @@ export async function runWorkflows(event: BaseEvent) {
 							action: href ? { label: 'Open record', url: `${appOrigin()}${href}` } : undefined
 						})
 					});
+				}
+			} else if (rule.action === 'set_field') {
+				// Update a field on the record that fired the event. Guarded like
+				// create_record: the resulting <entity>.updated event skips nested
+				// set_field runs so a rule can't loop on itself.
+				if (settingField) continue;
+				const field = rule.config.field;
+				if (!field) continue;
+				settingField = true;
+				try {
+					await updateRecord(
+						{
+							orgId: event.organizationId,
+							userId: 'system',
+							role: 'admin',
+							org: { id: event.organizationId, name: '', slug: '', logo: null }
+						},
+						event.entity.type,
+						event.entity.id,
+						{ [field]: rule.config.value ? render(rule.config.value, event) : null }
+					);
+				} finally {
+					settingField = false;
 				}
 			} else if (rule.action === 'create_record') {
 				// A workflow-created record re-emits <entity>.created; skip nested

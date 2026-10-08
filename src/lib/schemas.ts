@@ -45,7 +45,7 @@ export const fieldValueWrite = v.object({
 });
 
 /** Workflow automation rules. */
-export const WORKFLOW_ACTIONS = ['notify', 'create_record'] as const;
+export const WORKFLOW_ACTIONS = ['notify', 'create_record', 'set_field'] as const;
 
 export const workflowInput = v.object({
 	name: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(80)),
