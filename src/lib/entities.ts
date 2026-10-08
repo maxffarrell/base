@@ -46,6 +46,13 @@ export type EntityField = {
 	/** Rendered read-only in forms (e.g. computed or system fields). */
 	readonly?: boolean;
 	placeholder?: string;
+	/** Validation bounds for number/currency fields. */
+	min?: number;
+	max?: number;
+	/** Regex a text-ish value must match (validated via Valibot). */
+	pattern?: string;
+	/** Value applied when creating a record without one. */
+	default?: unknown;
 	/** Helper text under the input in forms. */
 	help?: string;
 	/** Form section heading — fields sharing a section group under one label. */
@@ -71,6 +78,8 @@ export type EntityDef = {
 	/** Records can be archived instead of deleted — requires an `archivedAt`
 	 * timestamp column on the entity's table. */
 	archivable?: boolean;
+	/** Only owner/admin members may create, update, archive, or delete records. */
+	adminOnly?: boolean;
 	/** Custom component escape hatches (Frappe struggles to offer this cleanly). */
 	listComponent?: Component;
 	formComponent?: Component;
