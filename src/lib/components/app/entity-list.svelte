@@ -20,6 +20,7 @@
 	import Download from '@lucide/svelte/icons/download';
 	import BulkBar from '#lib/components/app/bulk-bar.svelte';
 	import EntityForm from '#lib/components/app/entity-form.svelte';
+	import CalendarGrid from '#lib/components/app/calendar-grid.svelte';
 	import KanbanBoard from '#lib/components/app/kanban-board.svelte';
 	import PageHeader from '#lib/components/app/page-header.svelte';
 	import SavedViewsMenu from '#lib/components/app/saved-views-menu.svelte';
@@ -58,14 +59,26 @@
 	let linkTitles = $state<Record<string, Record<string, string>>>({});
 	let userNames = $state<Record<string, string>>({});
 
-	// Board view: enabled when the entity has a select field to group by.
+	// Board view: enabled when the entity has a select field to group by;
+	// calendar view when it has a date field.
 	const groupField = $derived(
 		def.fields.find((f) => f.type === 'select' && (f.options?.length ?? 0) > 1)
 	);
-	const views = $derived<ViewKind[]>(groupField ? ['table', 'kanban'] : ['table']);
+	const dateField = $derived(def.fields.find((f) => f.type === 'date'));
+	const views = $derived<ViewKind[]>(
+		groupField
+			? dateField
+				? ['table', 'kanban', 'calendar']
+				: ['table', 'kanban']
+			: dateField
+				? ['table', 'calendar']
+				: ['table']
+	);
 	let view = $state<ViewKind>('table');
 	const kanbanQuery = $derived(
-		view === 'kanban' ? listEntityRecords({ entity: def.name, q, filters, limit: 500 }) : null
+		view === 'kanban' || view === 'calendar'
+			? listEntityRecords({ entity: def.name, q, filters, limit: 500 })
+			: null
 	);
 
 	function kanbanCols(rows: Record<string, unknown>[]) {
@@ -380,6 +393,20 @@
 						</button>
 					{/snippet}
 				</KanbanBoard>
+			{/await}
+		{:else if view === 'calendar' && kanbanQuery && dateField}
+			{#await kanbanQuery then result}
+				<CalendarGrid
+					items={(result.rows as Record<string, unknown>[])
+						.filter((r) => r[dateField.key])
+						.map((r) => ({
+							id: r.id as string,
+							date: String(r[dateField.key]).slice(0, 10),
+							title: recordTitle(def, r),
+							sub: columns[1] ? cell(columns[1], r) : undefined,
+							href: `/${def.name}/${r.id}`
+						}))}
+				/>
 			{/await}
 		{:else}
 			<div class="overflow-x-auto rounded-md border">
