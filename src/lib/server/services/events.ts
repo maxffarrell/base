@@ -3,7 +3,7 @@ import { and, eq } from 'drizzle-orm';
 import { db } from '#lib/server/db/index.ts';
 import { activity, webhook } from '#lib/server/db/schema.ts';
 import { dispatchToIntegrations } from '#lib/server/integrations/runtime.ts';
-import { inboxForManagers, inboxForUsers } from '#lib/server/services/inbox.ts';
+import { emailUsers, inboxForManagers, inboxForUsers } from '#lib/server/services/inbox.ts';
 import { getNotificationPrefs } from '#lib/server/services/notifications.ts';
 import { runWorkflows } from '#lib/server/services/workflows.ts';
 
@@ -68,6 +68,10 @@ export async function emit(e: EventInput) {
 				title: e.summary,
 				href: `/${e.entityType}/${e.entityId}`
 			});
+			await emailUsers(e.orgId, users, {
+				title: e.summary,
+				href: `/${e.entityType}/${e.entityId}`
+			});
 		})().catch((err) => console.error('assignment notification failed', err));
 	}
 	if (e.action === 'shared') {
@@ -79,6 +83,10 @@ export async function emit(e: EventInput) {
 			);
 			if (!users.length) return;
 			await inboxForUsers(e.orgId, users, 'entity.shared', e.entityId, {
+				title: e.summary,
+				href: `/${e.entityType}/${e.entityId}`
+			});
+			await emailUsers(e.orgId, users, {
 				title: e.summary,
 				href: `/${e.entityType}/${e.entityId}`
 			});
