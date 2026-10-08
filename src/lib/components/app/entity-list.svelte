@@ -13,6 +13,7 @@
 	import ArrowDown from '@lucide/svelte/icons/arrow-down';
 	import ArrowUp from '@lucide/svelte/icons/arrow-up';
 	import ArrowUpDown from '@lucide/svelte/icons/arrow-up-down';
+	import Pencil from '@lucide/svelte/icons/pencil';
 	import Plus from '@lucide/svelte/icons/plus';
 	import Search from '@lucide/svelte/icons/search';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
@@ -32,6 +33,7 @@
 	import { formatDate, formatMoney } from '#lib/format.ts';
 	import {
 		bulkDeleteRecords,
+		bulkUpdateRecords,
 		getLinkOptions,
 		importEntityRecords,
 		listEntityRecords
@@ -281,6 +283,43 @@
 		pageNum = 1;
 	}
 
+	// Bulk "set field": limited to select/boolean/user fields so the value
+	// picker is always a closed set.
+	const bulkFields = $derived(
+		def.fields.filter(
+			(f) => !f.readonly && (f.type === 'select' || f.type === 'boolean' || f.type === 'user')
+		)
+	);
+	let showBulkSet = $state(false);
+	let bulkField = $state('');
+	let bulkValue = $state('');
+	let bulkUpdating = $state(false);
+	const bulkFieldDef = $derived(bulkFields.find((f) => f.key === bulkField));
+
+	async function applyBulkSet() {
+		if (!bulkFieldDef || bulkValue === '') return;
+		bulkUpdating = true;
+		try {
+			const value: unknown = bulkFieldDef.type === 'boolean' ? bulkValue === 'true' : bulkValue;
+			const res = await bulkUpdateRecords({
+				entity: def.name,
+				ids: [...selected],
+				input: { [bulkFieldDef.key]: value }
+			});
+			toast.success(
+				`Updated ${res.updated}${res.failed.length ? `, ${res.failed.length} failed` : ''}`
+			);
+			for (const f of res.failed.slice(0, 3)) toast.error(f.error);
+			selected = new Set();
+			showBulkSet = false;
+			await query.refresh();
+		} catch (err) {
+			toast.error((err as { body?: { message?: string } })?.body?.message ?? 'Update failed');
+		} finally {
+			bulkUpdating = false;
+		}
+	}
+
 	function removeSelected() {
 		const ids = [...selected];
 		confirmDelete({
@@ -507,6 +546,11 @@
 	onclear={() => (selected = new Set())}
 >
 	{#snippet actions()}
+		{#if bulkFields.length}
+			<Button variant="outline" size="sm" onclick={() => (showBulkSet = true)}
+				><Pencil class="size-4" /> Set field</Button
+			>
+		{/if}
 		<Button variant="destructive" size="sm" onclick={removeSelected}
 			><Trash2 class="size-4" /> Delete</Button
 		>
@@ -542,6 +586,60 @@
 			<Button variant="outline" onclick={() => (showImport = false)}>Cancel</Button>
 			<Button onclick={runImport} disabled={importing}>
 				{importing ? 'Importing…' : 'Import'}
+			</Button>
+		</Modal.Footer>
+	</Modal.Content>
+</Modal.Root>
+
+<Modal.Root bind:open={showBulkSet}>
+	<Modal.Content class="sm:max-w-md">
+		<Modal.Header>
+			<Modal.Title
+				>Set field on {selected.size} {selected.size === 1 ? 'record' : 'records'}</Modal.Title
+			>
+		</Modal.Header>
+		<div class="space-y-3">
+			<NativeSelect.Root
+				class="w-full"
+				aria-label="Field"
+				value={bulkField}
+				onchange={(e) => {
+					bulkField = (e.target as HTMLSelectElement).value;
+					bulkValue = '';
+				}}
+			>
+				<NativeSelect.Option value="">Choose a field…</NativeSelect.Option>
+				{#each bulkFields as f (f.key)}<NativeSelect.Option value={f.key}
+						>{f.label}</NativeSelect.Option
+					>{/each}
+			</NativeSelect.Root>
+			{#if bulkFieldDef}
+				<NativeSelect.Root
+					class="w-full"
+					aria-label="Value"
+					value={bulkValue}
+					onchange={(e) => (bulkValue = (e.target as HTMLSelectElement).value)}
+				>
+					<NativeSelect.Option value="">Choose a value…</NativeSelect.Option>
+					{#if bulkFieldDef.type === 'select'}
+						{#each bulkFieldDef.options ?? [] as o (o)}<NativeSelect.Option value={o}
+								>{o}</NativeSelect.Option
+							>{/each}
+					{:else if bulkFieldDef.type === 'boolean'}
+						<NativeSelect.Option value="true">Yes</NativeSelect.Option>
+						<NativeSelect.Option value="false">No</NativeSelect.Option>
+					{:else}
+						{#each Object.entries(userNames) as [id, name] (id)}<NativeSelect.Option value={id}
+								>{name}</NativeSelect.Option
+							>{/each}
+					{/if}
+				</NativeSelect.Root>
+			{/if}
+		</div>
+		<Modal.Footer>
+			<Button variant="outline" onclick={() => (showBulkSet = false)}>Cancel</Button>
+			<Button onclick={applyBulkSet} disabled={bulkUpdating || !bulkFieldDef || bulkValue === ''}>
+				{bulkUpdating ? 'Applying…' : 'Apply'}
 			</Button>
 		</Modal.Footer>
 	</Modal.Content>
