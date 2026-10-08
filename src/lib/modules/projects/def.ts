@@ -9,6 +9,7 @@ import { defineEntity } from '#lib/entities.ts';
 
 defineEntity({
 	name: 'project',
+	archivable: true,
 	label: 'Project',
 	labelPlural: 'Projects',
 	description: 'Work you track with tasks',
@@ -48,6 +49,7 @@ defineEntity({
 
 defineEntity({
 	name: 'task',
+	archivable: true,
 	label: 'Task',
 	labelPlural: 'Tasks',
 	description: 'Units of work on a project',

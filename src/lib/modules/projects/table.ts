@@ -1,4 +1,4 @@
-import { index, pgTable, text } from 'drizzle-orm/pg-core';
+import { index, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import { id, orgId, timestamps } from '#lib/server/db/kit.ts';
 import { user } from '#lib/server/db/auth.schema.ts';
 import { directoryCompany } from '#lib/modules/directory/table.ts';
@@ -13,6 +13,7 @@ export const project = pgTable(
 		companyId: text('company_id').references(() => directoryCompany.id, { onDelete: 'set null' }),
 		dueDate: text('due_date'),
 		description: text('description'),
+		archivedAt: timestamp('archived_at', { withTimezone: true }),
 		...timestamps
 	},
 	(t) => [index('project_org_idx').on(t.organizationId, t.status)]
@@ -32,6 +33,7 @@ export const task = pgTable(
 		assigneeId: text('assignee_id').references(() => user.id, { onDelete: 'set null' }),
 		dueDate: text('due_date'),
 		notes: text('notes'),
+		archivedAt: timestamp('archived_at', { withTimezone: true }),
 		...timestamps
 	},
 	(t) => [

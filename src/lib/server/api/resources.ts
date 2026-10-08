@@ -47,7 +47,8 @@ export const resources: Record<string, Resource> = Object.fromEntries(
 					sort: url.searchParams.get('sort') ?? undefined,
 					dir: url.searchParams.get('dir') === 'asc' ? 'asc' : undefined,
 					limit: Math.min(Number(url.searchParams.get('limit') ?? 50) || 50, 200),
-					offset: Number(url.searchParams.get('offset') ?? 0) || 0
+					offset: Number(url.searchParams.get('offset') ?? 0) || 0,
+					archivedOnly: url.searchParams.get('archived') === '1'
 				}),
 			get: (ctx: OrgContext, id: string) => getRecord(ctx.orgId, reg.def.name, id),
 			create: {
