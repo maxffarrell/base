@@ -10,6 +10,7 @@
 	import Copy from '@lucide/svelte/icons/copy';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
 	import Printer from '@lucide/svelte/icons/printer';
+	import Star from '@lucide/svelte/icons/star';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import * as Modal from '#lib/components/ui/modal/index.js';
 	import { aiSummarize, getAiStatus } from '#lib/remote/ai.remote.ts';
@@ -29,6 +30,7 @@
 		getRelatedRecords,
 		setEntityArchived
 	} from '#lib/remote/entities.remote.ts';
+	import { isFavorite, toggleFavorite } from '#lib/remote/favorites.remote.ts';
 
 	const def = $derived(getEntityDef(page.params.entity ?? ''));
 	const id = $derived(page.params.id ?? '');
@@ -36,6 +38,7 @@
 	const activityQuery = $derived(def ? getRecordActivity({ entity: def.name, id }) : null);
 	const relatedQuery = $derived(def ? getRelatedRecords({ entity: def.name, id }) : null);
 	const aiStatus = $derived(await getAiStatus());
+	const favQuery = $derived(def ? isFavorite({ entity: def.name, id }) : null);
 	let aiSummary = $state<string | null>(null);
 	let aiBusy = $state(false);
 	let showDup = $state(false);
@@ -108,6 +111,17 @@
 			{#snippet actions()}
 				<Button variant="ghost" size="sm" href={`/${def.name}`}><ArrowLeft /> Back</Button>
 				{#if record}
+					<Button
+						variant="ghost"
+						size="sm"
+						aria-label="Toggle star"
+						onclick={async () => {
+							const res = await toggleFavorite({ entity: def.name, id });
+							toast.success(res.favorited ? 'Starred' : 'Unstarred');
+						}}
+					>
+						<Star class={favQuery?.current ? 'fill-amber-400 text-amber-400' : ''} />
+					</Button>
 					{#if def.archivable}
 						<Button variant="outline" size="sm" onclick={() => toggleArchive(record)}>
 							{#if record.archivedAt}<ArchiveRestore /> Restore{:else}<Archive /> Archive{/if}
