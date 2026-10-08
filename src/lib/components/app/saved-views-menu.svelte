@@ -49,6 +49,12 @@
 			if (k === 'sorting' && Array.isArray(v))
 				parts.push(`sorted by ${(v as { id: string }[]).map((s) => s.id).join(', ')}`);
 			else if (typeof v === 'boolean') parts.push(k);
+			else if (typeof v === 'object')
+				parts.push(
+					`${k}: ${JSON.stringify(v)
+						.replace(/[{}[\]"]/g, '')
+						.replace(/,/g, ', ')}`
+				);
 			else parts.push(`${k}: ${String(v)}`);
 		}
 		return parts.join(' · ') || 'no filters';

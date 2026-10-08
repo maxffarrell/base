@@ -153,6 +153,7 @@
 				id: row.id,
 				input: { [groupField!.key]: to === 'none' ? null : to }
 			});
+			void kanbanQuery?.refresh();
 		} catch (err) {
 			toast.error((err as { body?: { message?: string } })?.body?.message ?? 'Move rejected');
 		}
