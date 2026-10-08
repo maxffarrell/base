@@ -514,14 +514,21 @@
 			<Empty.Root class="border">
 				<Empty.Header>
 					{#if def.icon}<Empty.Media variant="icon"><def.icon /></Empty.Media>{/if}
-					<Empty.Title>No {def.labelPlural ?? `${def.label}s`} yet</Empty.Title>
-					<Empty.Description
-						>{def.description ?? 'Create the first one to get started.'}</Empty.Description
-					>
+					<Empty.Title>
+						{q || Object.keys(filters).length
+							? 'No records match your search or filters'
+							: `No ${def.labelPlural ?? `${def.label}s`} yet`}
+					</Empty.Title>
+					{#if !q && !Object.keys(filters).length}
+						<Empty.Description
+							>{def.description ?? 'Create the first one to get started.'}</Empty.Description
+						>
+					{/if}
 				</Empty.Header>
 				<Empty.Content
-					>{#if canWrite}<Button size="sm" onclick={() => (showNew = true)}
-							><Plus /> New {def.label}</Button
+					>{#if !q && !Object.keys(filters).length && canWrite}<Button
+							size="sm"
+							onclick={() => (showNew = true)}><Plus /> New {def.label}</Button
 						>{/if}
 					></Empty.Content
 				>

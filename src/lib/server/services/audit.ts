@@ -48,6 +48,7 @@ const select = {
 	entityType: activity.entityType,
 	entityId: activity.entityId,
 	summary: activity.summary,
+	data: activity.data,
 	createdAt: activity.createdAt,
 	actorId: activity.actorId,
 	actorName: user.name

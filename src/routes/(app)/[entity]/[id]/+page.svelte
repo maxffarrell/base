@@ -252,11 +252,27 @@
 								<Card.Content>
 									<ul class="space-y-3">
 										{#each activity.rows as a (a.id)}
+											{@const changes = (a.data?.changes ?? []) as {
+												field: string;
+												from: string | null;
+												to: string | null;
+											}[]}
 											<li class="text-sm">
 												<p class="leading-snug">{a.summary ?? a.action}</p>
 												<p class="mt-0.5 text-xs text-muted-foreground">
 													{a.actorName ?? 'System'} · {formatRelative(a.createdAt)}
 												</p>
+												{#if changes.length}
+													<ul class="mt-1 space-y-0.5 text-xs text-muted-foreground">
+														{#each changes as c (c.field)}
+															<li>
+																<span class="font-medium text-foreground">{c.field}</span>:
+																{#if c.from}<s class="opacity-70">{c.from}</s> →
+																{/if}{c.to ?? 'cleared'}
+															</li>
+														{/each}
+													</ul>
+												{/if}
 											</li>
 										{/each}
 									</ul>
