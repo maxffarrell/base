@@ -104,8 +104,10 @@
 		{:else}
 			<p class="p-8 text-sm text-muted-foreground">Record not found.</p>
 		{/if}
-	{:catch}
-		<p class="p-8 text-sm text-muted-foreground">Sign in to print this record.</p>
+	{:catch err}
+		<p class="p-8 text-sm text-muted-foreground">
+			Couldn't load this record — {err?.body?.message ?? err?.message ?? 'try signing in again'}.
+		</p>
 	{/await}
 {/if}
 

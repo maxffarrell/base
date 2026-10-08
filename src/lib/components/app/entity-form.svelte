@@ -40,7 +40,24 @@
 	} = $props();
 
 	const editable = $derived(def.fields.filter((f) => !f.readonly));
-	let values = $state<Record<string, unknown>>({});
+
+	function buildInitial() {
+		const initial: Record<string, unknown> = {};
+		for (const f of editable) {
+			const v = record?.[f.key];
+			if (v != null) initial[f.key] = v;
+			else if (f.default !== undefined) initial[f.key] = f.default;
+			else if (f.type === 'boolean') initial[f.key] = false;
+			else if (f.type === 'currency') initial[f.key] = null;
+			else if (f.type === 'select' && f.options?.length)
+				initial[f.key] = record ? '' : f.options[0];
+			else initial[f.key] = '';
+		}
+		return initial;
+	}
+
+	// Initialized eagerly — bound inputs crash on `undefined` before the effect runs.
+	let values = $state<Record<string, unknown>>(buildInitial());
 	let linkChoices = $state<Record<string, { id: string; title: string }[]>>({});
 	let members = $state<{ userId: string; name: string | null; email: string }[]>([]);
 	let saving = $state(false);
@@ -53,17 +70,7 @@
 	let linkNewField = $state('');
 
 	$effect(() => {
-		const initial: Record<string, unknown> = {};
-		for (const f of editable) {
-			const v = record?.[f.key];
-			if (v != null) initial[f.key] = v;
-			else if (f.default !== undefined) initial[f.key] = f.default;
-			else if (f.type === 'boolean') initial[f.key] = false;
-			else if (f.type === 'select' && f.options?.length)
-				initial[f.key] = record ? '' : f.options[0];
-			else initial[f.key] = '';
-		}
-		values = initial;
+		values = buildInitial();
 		for (const f of editable) {
 			if (f.type === 'link' && f.linkTo && !(f.key in linkChoices)) {
 				void getLinkOptions(f.linkTo).then((opts) => (linkChoices[f.key] = opts));
