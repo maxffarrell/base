@@ -7,6 +7,7 @@
 	import '#lib/modules/index.ts';
 	import { getAuditLog } from '#lib/remote/audit.remote.ts';
 	import { listEntityRecords } from '#lib/remote/entities.remote.ts';
+	import { getFavorites } from '#lib/remote/favorites.remote.ts';
 
 	const defs = listEntityDefs();
 	const org = $derived(page.data.org?.name ?? 'Workspace');
@@ -31,6 +32,7 @@
 			.filter((x) => x.count > 0);
 	}
 
+	const favorites = $derived(await getFavorites());
 	const me = $derived(page.data.user?.id ?? '');
 	/** Defs with a `user` field — each becomes an "Assigned to me" section. */
 	const assignable = $derived(
@@ -104,6 +106,24 @@
 			</a>
 		{/each}
 	</div>
+
+	{#if favorites.length}
+		<Card.Root>
+			<Card.Header><Card.Title class="text-base">Starred</Card.Title></Card.Header>
+			<Card.Content>
+				<ul class="divide-y">
+					{#each favorites as f (f.entity + f.id)}
+						<li class="flex items-baseline justify-between gap-3 py-2 text-sm">
+							<a class="min-w-0 truncate font-medium hover:underline" href="/{f.entity}/{f.id}"
+								>{f.title}</a
+							>
+							<span class="shrink-0 text-xs text-muted-foreground">{f.label}</span>
+						</li>
+					{/each}
+				</ul>
+			</Card.Content>
+		</Card.Root>
+	{/if}
 
 	<div class="grid gap-4 lg:grid-cols-2">
 		{#each assignable as { def: d, field } (d.name)}

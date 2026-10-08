@@ -52,6 +52,24 @@ export const comment = pgTable(
 	(t) => [index('comment_entity_idx').on(t.organizationId, t.entityType, t.entityId)]
 );
 
+/** Per-user starred records across any entity. */
+export const favorite = pgTable(
+	'favorite',
+	{
+		id: id(),
+		organizationId: orgId(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		entityType: text('entity_type').notNull(),
+		entityId: text('entity_id').notNull(),
+		...timestamps
+	},
+	(t) => [
+		uniqueIndex('favorite_unique_idx').on(t.organizationId, t.userId, t.entityType, t.entityId)
+	]
+);
+
 export const documentBlob = pgTable('document_blob', {
 	storageKey: text('storage_key').primaryKey(),
 	data: text('data').notNull()
