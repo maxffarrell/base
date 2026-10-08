@@ -3,7 +3,9 @@
 	import * as Command from '#lib/components/ui/command/index.js';
 	import { searchAll } from '#lib/remote/workspace.remote.ts';
 	import type { SearchHit } from '#lib/server/services/search.ts';
+	import { page } from '$app/state';
 	import { allNav, mainNav } from './nav.ts';
+	import { getEntityDef } from '#lib/entities.ts';
 	import { isTypingTarget } from './keys.ts';
 	import { readRecents } from '#lib/recents.ts';
 	import Box from '@lucide/svelte/icons/box';
@@ -69,6 +71,14 @@
 			return;
 		}
 		if (helpOpen) return;
+		if (e.key === 'n') {
+			const slug = page.url.pathname.split('/').filter(Boolean);
+			if (slug.length === 1 && getEntityDef(slug[0]!)) {
+				e.preventDefault();
+				void goto(`${page.url.pathname}?new=1`);
+			}
+			return;
+		}
 		if (pendingG) {
 			pendingG = false;
 			clearTimeout(gTimer);
@@ -157,6 +167,9 @@
 					>G then a key — {#each allNav as n (n.href)}<Kbd>{n.key}</Kbd> {n.label}
 					{/each}</span
 				>
+			</li>
+			<li class="flex justify-between py-2">
+				<span>New record (on a list)</span><Kbd>N</Kbd>
 			</li>
 			<li class="flex justify-between py-2">
 				<span>This help</span><Kbd>?</Kbd>

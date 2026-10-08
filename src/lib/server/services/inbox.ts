@@ -1,6 +1,8 @@
 import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { db } from '#lib/server/db/index.ts';
-import { inboxItem, member } from '#lib/server/db/schema.ts';
+import { inboxItem, member, organization, user } from '#lib/server/db/schema.ts';
+import { appOrigin, sendEmail } from '#lib/server/email.ts';
+import { renderEmail } from '#lib/server/email-template.ts';
 
 export type InboxNotice = { title: string; body?: string; href?: string };
 
@@ -60,6 +62,29 @@ export async function inboxForUsers(
 		)
 		.onConflictDoNothing();
 	return userIds.length;
+}
+
+/** Emails an event notice to each listed member (best-effort per user). */
+export async function emailUsers(orgId: string, userIds: string[], notice: InboxNotice) {
+	if (!userIds.length) return;
+	const rows = await db
+		.select({ email: user.email })
+		.from(member)
+		.innerJoin(user, eq(user.id, member.userId))
+		.where(and(eq(member.organizationId, orgId), inArray(member.userId, userIds)));
+	const [org] = await db
+		.select({ name: organization.name })
+		.from(organization)
+		.where(eq(organization.id, orgId));
+	const rendered = renderEmail({
+		orgName: org?.name ?? 'Workspace',
+		heading: notice.title,
+		lines: notice.body ? [notice.body] : [],
+		action: notice.href ? { label: 'View', url: `${appOrigin()}${notice.href}` } : undefined
+	});
+	await Promise.allSettled(
+		rows.map((r) => sendEmail({ to: r.email, subject: rendered.text.split('\n')[0]!, ...rendered }))
+	);
 }
 
 export async function listInbox(orgId: string, userId: string, limit = 30) {
