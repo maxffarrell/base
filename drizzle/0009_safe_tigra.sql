@@ -1,0 +1,1 @@
+ALTER TABLE "directory_contact" ADD COLUMN "tags" text[];

@@ -29,6 +29,7 @@
 	import PageHeader from '#lib/components/app/page-header.svelte';
 	import SavedViewsMenu from '#lib/components/app/saved-views-menu.svelte';
 	import StatusBadge from '#lib/components/app/status-badge.svelte';
+	import { Badge } from '#lib/components/ui/badge/index.js';
 	import ViewSwitcher, { type ViewKind } from '#lib/components/app/view-switcher.svelte';
 	import { Textarea } from '#lib/components/ui/textarea/index.js';
 	import { confirmDelete } from '#lib/components/ui/confirm-delete-dialog/index.js';
@@ -72,6 +73,22 @@
 	}
 	const filterFields = $derived(def.fields.filter((f) => f.filterable));
 	const userFilterField = $derived(filterFields.find((f) => f.type === 'user'));
+	const groupFields = $derived(def.fields.filter((f) => f.type === 'select' && !f.hidden));
+	let groupBy = $state('');
+	function rowGroups(rows: Record<string, unknown>[]) {
+		if (!groupBy) return [{ key: '', rows }];
+		const order: string[] = [];
+		const by: Record<string, Record<string, unknown>[]> = {};
+		for (const r of rows) {
+			const k = String(r[groupBy] ?? '');
+			if (!by[k]) {
+				by[k] = [];
+				order.push(k);
+			}
+			by[k].push(r);
+		}
+		return order.map((key) => ({ key, rows: by[key] }));
+	}
 	const myId = $derived(page.data.user?.id as string | undefined);
 	const numericCols = $derived(columns.filter((f) => f.type === 'currency' || f.type === 'number'));
 	/** Page-sum for a currency/number column. */
@@ -444,7 +461,15 @@
 				/>
 			</div>
 		{/if}
-		{#each filterFields as f (f.key)}
+		{#each filterFields.filter((f) => f.type === 'tags') as f (f.key)}
+			<Input
+				class="h-9 w-36"
+				placeholder="{f.label} contains…"
+				value={filters[f.key] ?? ''}
+				oninput={(e) => setFilter(f.key, (e.currentTarget as HTMLInputElement).value)}
+			/>
+		{/each}
+		{#each filterFields.filter((f) => f.type !== 'tags') as f (f.key)}
 			<NativeSelect.Root
 				class="h-9 w-40"
 				aria-label={f.label}
@@ -512,6 +537,19 @@
 						{/each}
 					</DropdownMenu.Content>
 				</DropdownMenu.Root>
+			{/if}
+			{#if groupFields.length && view === 'table'}
+				<NativeSelect.Root
+					class="h-9 w-40"
+					aria-label="Group by"
+					value={groupBy}
+					onchange={(e) => (groupBy = (e.target as HTMLSelectElement).value)}
+				>
+					<NativeSelect.Option value="">Group: none</NativeSelect.Option>
+					{#each groupFields as f (f.key)}<NativeSelect.Option value={f.key}
+							>{f.label}</NativeSelect.Option
+						>{/each}
+				</NativeSelect.Root>
 			{/if}
 			<ViewSwitcher {views} bind:value={view} />
 			<SavedViewsMenu page={def.name} current={viewState} onapply={applyView} />
@@ -618,33 +656,53 @@
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
-						{#each result.rows as row (row.id)}
-							<Table.Row
-								class="cursor-pointer"
-								onclick={() => goto(`/${def.name}/${row.id}`)}
-								data-state={selected.has(row.id as string) ? 'selected' : undefined}
-							>
-								<Table.Cell onclick={(e) => e.stopPropagation()}>
-									<Checkbox
-										checked={selected.has(row.id as string)}
-										onCheckedChange={(v) => {
-											const next = new Set(selected);
-											if (v) next.add(row.id as string);
-											else next.delete(row.id as string);
-											selected = next;
-										}}
-									/>
-								</Table.Cell>
-								{#each columns as f (f.key)}
-									<Table.Cell class={cn(f === columns[0] && 'font-medium')}>
-										{#if f.type === 'select' && row[f.key] != null && row[f.key] !== ''}
-											<StatusBadge status={String(row[f.key])} />
-										{:else}
-											<span class="line-clamp-1">{cell(f, row)}</span>
-										{/if}
+						{#each rowGroups(result.rows as Record<string, unknown>[]) as g (g.key)}
+							{#if groupBy}
+								<Table.Row class="bg-muted/50 hover:bg-muted/50">
+									<Table.Cell colspan={columns.length + 1} class="text-xs font-semibold">
+										{groupFields.find((f) => f.key === groupBy)?.label}: {g.key || 'None'}
+										<span class="font-normal text-muted-foreground">({g.rows.length})</span>
 									</Table.Cell>
-								{/each}
-							</Table.Row>
+								</Table.Row>
+							{/if}
+							{#each g.rows as row (row.id)}
+								<Table.Row
+									class="cursor-pointer"
+									onclick={() => goto(`/${def.name}/${row.id}`)}
+									data-state={selected.has(row.id as string) ? 'selected' : undefined}
+								>
+									<Table.Cell onclick={(e) => e.stopPropagation()}>
+										<Checkbox
+											checked={selected.has(row.id as string)}
+											onCheckedChange={(v) => {
+												const next = new Set(selected);
+												if (v) next.add(row.id as string);
+												else next.delete(row.id as string);
+												selected = next;
+											}}
+										/>
+									</Table.Cell>
+									{#each columns as f (f.key)}
+										<Table.Cell class={cn(f === columns[0] && 'font-medium')}>
+											{#if f.type === 'select' && row[f.key] != null && row[f.key] !== ''}
+												<StatusBadge status={String(row[f.key])} />
+											{:else if f.type === 'tags' && Array.isArray(row[f.key])}
+												<span class="line-clamp-1 inline-flex gap-1">
+													{#each (row[f.key] as string[]).slice(0, 3) as t (t)}
+														<Badge variant="secondary">{t}</Badge>
+													{/each}
+													{#if (row[f.key] as string[]).length > 3}<span
+															class="text-xs text-muted-foreground"
+															>+{(row[f.key] as string[]).length - 3}</span
+														>{/if}
+												</span>
+											{:else}
+												<span class="line-clamp-1">{cell(f, row)}</span>
+											{/if}
+										</Table.Cell>
+									{/each}
+								</Table.Row>
+							{/each}
 						{/each}
 					</Table.Body>
 					{#if numericCols.length && result.rows.length}

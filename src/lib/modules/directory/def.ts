@@ -71,6 +71,7 @@ defineEntity({
 				inactive: ['lead']
 			}
 		},
+		{ key: 'tags', label: 'Tags', type: 'tags', list: true, filterable: true },
 		{ key: 'notes', label: 'Notes', type: 'textarea' }
 	]
 });

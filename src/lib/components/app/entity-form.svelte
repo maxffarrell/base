@@ -7,6 +7,7 @@
 	import * as Field from '#lib/components/ui/field/index.js';
 	import * as NativeSelect from '#lib/components/ui/native-select/index.js';
 	import MoneyInput from '#lib/components/app/money-input.svelte';
+	import TagInput from '#lib/components/app/tag-input.svelte';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
 	import { getEntityDef, type EntityDef, type EntityField } from '#lib/entities.ts';
 	import Plus from '@lucide/svelte/icons/plus';
@@ -49,6 +50,7 @@
 			else if (f.default !== undefined) initial[f.key] = f.default;
 			else if (f.type === 'boolean') initial[f.key] = false;
 			else if (f.type === 'currency') initial[f.key] = null;
+			else if (f.type === 'tags') initial[f.key] = [];
 			else if (f.type === 'select' && f.options?.length)
 				initial[f.key] = record ? '' : f.options[0];
 			else initial[f.key] = '';
@@ -253,6 +255,8 @@
 					<Input id="ef-{f.key}" type="number" step="any" bind:value={values[f.key] as string} />
 				{:else if f.type === 'date'}
 					<Input id="ef-{f.key}" type="date" bind:value={values[f.key] as string} />
+				{:else if f.type === 'tags'}
+					<TagInput id="ef-{f.key}" bind:value={values[f.key] as string[]} />
 				{:else}
 					<Input
 						id="ef-{f.key}"
