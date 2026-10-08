@@ -70,6 +70,21 @@ export const GET: RequestHandler = ({ url }) => {
 			};
 		}
 	}
+	paths['/meta'] = {
+		get: {
+			summary: 'Entity catalog',
+			description:
+				'Serializable entity defs (fields, options, transitions) limited to entities the key may read.',
+			responses: { 200: { description: 'OK' } }
+		}
+	};
+	paths['/meta/options'] = {
+		get: {
+			summary: 'Link field options',
+			description: '`?entity=<name>` → `{ id, title }[]` for link pickers; requires `<entity>:read`.',
+			responses: { 200: { description: 'OK' }, 403: { description: 'Forbidden' } }
+		}
+	};
 	return json({
 		openapi: '3.1.0',
 		info: {
