@@ -13,6 +13,7 @@
 	import Share2 from '@lucide/svelte/icons/share-2';
 	import Printer from '@lucide/svelte/icons/printer';
 	import Star from '@lucide/svelte/icons/star';
+	import Bell from '@lucide/svelte/icons/bell';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import * as Modal from '#lib/components/ui/modal/index.js';
 	import { aiSummarize, getAiStatus } from '#lib/remote/ai.remote.ts';
@@ -32,7 +33,13 @@
 		getRelatedRecords,
 		setEntityArchived
 	} from '#lib/remote/entities.remote.ts';
-	import { isFavorite, toggleFavorite } from '#lib/remote/favorites.remote.ts';
+	import {
+		getWatcherCount,
+		isFavorite,
+		isWatching,
+		toggleFavorite,
+		toggleWatch
+	} from '#lib/remote/favorites.remote.ts';
 	import { getShares, shareEntityRecord, unshareEntityRecord } from '#lib/remote/shares.remote.ts';
 	import { getMembers } from '#lib/remote/workspace.remote.ts';
 	import * as NativeSelect from '#lib/components/ui/native-select/index.js';
@@ -46,6 +53,8 @@
 	const relatedQuery = $derived(def ? getRelatedRecords({ entity: def.name, id }) : null);
 	const aiStatus = $derived(await getAiStatus());
 	const favQuery = $derived(def ? isFavorite({ entity: def.name, id }) : null);
+	const watchQuery = $derived(def ? isWatching({ entity: def.name, id }) : null);
+	const watcherCount = $derived(def ? getWatcherCount({ entity: def.name, id }) : null);
 	let aiSummary = $state<string | null>(null);
 	let aiBusy = $state(false);
 	let showDup = $state(false);
@@ -152,6 +161,21 @@
 				{#if record}
 					<Button variant="ghost" size="sm" aria-label="Toggle star" onclick={star}>
 						<Star class={favQuery?.current ? 'fill-amber-400 text-amber-400' : ''} />
+					</Button>
+					<Button
+						variant="ghost"
+						size="sm"
+						aria-label="Follow record"
+						title="Get inbox alerts when this record changes"
+						onclick={async () => {
+							const res = await toggleWatch({ entity: def.name, id });
+							toast.success(res.watching ? 'Following' : 'Unfollowed');
+						}}
+					>
+						<Bell class={watchQuery?.current ? 'fill-primary text-primary' : 'size-4'} />
+						{#if watcherCount?.current}
+							<span class="text-xs text-muted-foreground">{watcherCount.current}</span>
+						{/if}
 					</Button>
 					<Button
 						variant="ghost"

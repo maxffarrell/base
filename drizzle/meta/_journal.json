@@ -78,6 +78,13 @@
       "when": 1791425873282,
       "tag": "0010_supreme_hellion",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791426014863,
+      "tag": "0011_round_klaw",
+      "breakpoints": true
     }
   ]
 }

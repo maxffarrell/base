@@ -53,6 +53,23 @@ export const comment = pgTable(
 );
 
 /** Per-user starred records across any entity. */
+export const recordWatch = pgTable(
+	'record_watch',
+	{
+		id: id(),
+		organizationId: orgId(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		entityType: text('entity_type').notNull(),
+		entityId: text('entity_id').notNull(),
+		...timestamps
+	},
+	(t) => [
+		uniqueIndex('record_watch_unique_idx').on(t.organizationId, t.userId, t.entityType, t.entityId)
+	]
+);
+
 export const favorite = pgTable(
 	'favorite',
 	{
