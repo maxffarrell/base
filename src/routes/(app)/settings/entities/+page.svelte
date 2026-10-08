@@ -2,9 +2,17 @@
 	import * as Card from '#lib/components/ui/card/index.js';
 	import * as Table from '#lib/components/ui/table/index.js';
 	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { page } from '$app/state';
 	import { listEntityDefs } from '#lib/entities.ts';
 	import { listEntityRecords } from '#lib/remote/entities.remote.ts';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { toast } from 'svelte-sonner';
+	import Copy from '@lucide/svelte/icons/copy';
 	import '#lib/modules/index.ts';
+
+	function curl(name: string) {
+		return `curl -H "Authorization: Bearer $API_KEY" ${page.url.origin}/api/v1/${name}`;
+	}
 
 	const defs = listEntityDefs();
 </script>
@@ -24,6 +32,7 @@
 					<Table.Head>Entity</Table.Head>
 					<Table.Head class="hidden md:table-cell">Fields</Table.Head>
 					<Table.Head class="hidden sm:table-cell">Traits</Table.Head>
+					<Table.Head class="hidden lg:table-cell">REST</Table.Head>
 					<Table.Head class="text-right">Records</Table.Head>
 				</Table.Row>
 			</Table.Header>
@@ -57,6 +66,21 @@
 								{#if d.fields.some((f) => f.type === 'user')}<Badge variant="secondary"
 										>assignable</Badge
 									>{/if}
+							</div>
+						</Table.Cell>
+						<Table.Cell class="hidden lg:table-cell">
+							<div class="flex items-center gap-1">
+								<code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs"
+									>/api/v1/{d.name}</code
+								>
+								<Button
+									size="icon-sm"
+									variant="ghost"
+									aria-label="Copy curl"
+									onclick={() =>
+										navigator.clipboard.writeText(curl(d.name)).then(() => toast.success('Copied'))}
+									><Copy /></Button
+								>
 							</div>
 						</Table.Cell>
 						<Table.Cell class="text-right tabular-nums">
