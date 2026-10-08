@@ -9,7 +9,8 @@ export async function listSavedViews(orgId: string, page: string) {
 			name: savedView.name,
 			state: savedView.state,
 			createdBy: savedView.createdBy,
-			creatorName: user.name
+			creatorName: user.name,
+			isOrgDefault: savedView.isOrgDefault
 		})
 		.from(savedView)
 		.leftJoin(user, eq(user.id, savedView.createdBy))
@@ -45,4 +46,16 @@ export async function deleteSavedView(
 				by.admin ? undefined : eq(savedView.createdBy, by.userId)
 			)
 		);
+}
+
+export async function setOrgDefaultView(orgId: string, page: string, id: string | null) {
+	await db
+		.update(savedView)
+		.set({ isOrgDefault: false })
+		.where(and(eq(savedView.organizationId, orgId), eq(savedView.page, page)));
+	if (id)
+		await db
+			.update(savedView)
+			.set({ isOrgDefault: true })
+			.where(and(eq(savedView.id, id), eq(savedView.organizationId, orgId)));
 }

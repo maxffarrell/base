@@ -1,0 +1,1 @@
+ALTER TABLE "saved_view" ADD COLUMN "is_org_default" boolean DEFAULT false NOT NULL;
