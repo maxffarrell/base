@@ -1,26 +1,26 @@
-# Self-host Leroa with Postgres: `BETTER_AUTH_SECRET=$(openssl rand -hex 32) docker compose up -d`
+# Self-host Base with Postgres: `BETTER_AUTH_SECRET=$(openssl rand -hex 32) docker compose up -d`
 services:
   app:
-    image: ghcr.io/maxffarrell/leroa:latest
+    image: ghcr.io/maxffarrell/base:latest
     build: .
     ports: ['3000:3000']
     environment:
-      DATABASE_URL: postgres://leroa:leroa@db:5432/leroa
+      DATABASE_URL: postgres://base:base@db:5432/base
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET}
       ORIGIN: ${ORIGIN:-http://localhost:3000}
-      LEROA_ENTERPRISE_KEY: ${LEROA_ENTERPRISE_KEY:-}
+      BASE_ENTERPRISE_KEY: ${BASE_ENTERPRISE_KEY:-}
     depends_on:
       db: { condition: service_healthy }
     restart: unless-stopped
   db:
     image: postgres:18-alpine
     environment:
-      POSTGRES_USER: leroa
-      POSTGRES_PASSWORD: leroa
-      POSTGRES_DB: leroa
+      POSTGRES_USER: base
+      POSTGRES_PASSWORD: base
+      POSTGRES_DB: base
     volumes: ['pgdata:/var/lib/postgresql']
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U leroa']
+      test: ['CMD-SHELL', 'pg_isready -U base']
       interval: 5s
       retries: 10
     restart: unless-stopped
