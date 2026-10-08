@@ -7,8 +7,11 @@
 	import { deleteView, getSavedViews, saveViewAs } from '#lib/remote/views.remote.ts';
 	import Bookmark from '@lucide/svelte/icons/bookmark';
 	import Check from '@lucide/svelte/icons/check';
+	import Star from '@lucide/svelte/icons/star';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import X from '@lucide/svelte/icons/x';
+	import { readDefaultView, writeDefaultView } from '#lib/colprefs.ts';
+	import { cn } from '#lib/utils.js';
 
 	type ViewState = Record<string, unknown>;
 	type SavedView = Awaited<ReturnType<typeof getSavedViews>>[number];
@@ -63,7 +66,19 @@
 	async function remove(v: SavedView, e: Event) {
 		e.stopPropagation();
 		await deleteView(v.id);
+		if (defaultId === v.id) {
+			defaultId = null;
+			writeDefaultView(key, null);
+		}
 		void getSavedViews(key).refresh();
+	}
+
+	let defaultId = $derived<string | null>(readDefaultView(key));
+
+	function toggleDefault(v: SavedView, e: Event) {
+		e.stopPropagation();
+		defaultId = defaultId === v.id ? null : v.id;
+		writeDefaultView(key, defaultId);
 	}
 </script>
 
@@ -102,6 +117,17 @@
 				<DropdownMenu.Item class="flex-col items-start gap-0.5" onclick={() => onapply(v.state)}>
 					<span class="flex w-full items-center gap-2">
 						<span class="truncate">{v.name}</span>
+						<button
+							class={cn(
+								'ml-auto shrink-0 rounded p-0.5 text-muted-foreground hover:text-amber-500',
+								defaultId === v.id && 'text-amber-500'
+							)}
+							aria-label={defaultId === v.id ? 'Unset default view' : 'Set as default view'}
+							title={defaultId === v.id ? 'Default view' : 'Set as default'}
+							onclick={(e) => toggleDefault(v, e)}
+						>
+							<Star class={cn('size-3.5', defaultId === v.id && 'fill-amber-500')} />
+						</button>
 						{#if canDelete(v)}
 							<button
 								class="ml-auto shrink-0 rounded p-0.5 text-muted-foreground hover:text-destructive"

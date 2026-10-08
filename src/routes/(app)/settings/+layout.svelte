@@ -11,6 +11,7 @@
 		{ href: '/settings/team', label: 'Team' },
 		{ href: '/settings/notifications', label: 'Notifications' },
 		{ href: '/settings/audit', label: 'Audit log' },
+		{ href: '/settings/entities', label: 'Entities' },
 		{ href: '/settings/fields', label: 'Fields' },
 		{ href: '/settings/workflows', label: 'Workflows' },
 		{ href: '/settings/ai', label: 'AI' },

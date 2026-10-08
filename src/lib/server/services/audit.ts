@@ -53,6 +53,19 @@ const select = {
 	actorName: user.name
 };
 
+/** Daily activity counts for the last `days` days (sparse — fill gaps on the client). */
+export async function activitySeries(orgId: string, days = 30) {
+	const since = new Date(Date.now() - days * 86400_000);
+	return db
+		.select({
+			day: sql<string>`to_char(date_trunc('day', ${activity.createdAt}), 'YYYY-MM-DD')`,
+			count: sql<number>`count(*)::int`
+		})
+		.from(activity)
+		.where(and(eq(activity.organizationId, orgId), gte(activity.createdAt, since)))
+		.groupBy(sql`1`);
+}
+
 /** Paged audit rows, newest first. `before` is the last row's createdAt. */
 export async function listAudit(orgId: string, f: AuditFilter) {
 	const limit = Math.min(f.limit ?? 50, 200);

@@ -4,3 +4,4 @@
  */
 import './directory/server.ts';
 import './projects/server.ts';
+import './billing/server.ts';

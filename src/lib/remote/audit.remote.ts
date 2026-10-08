@@ -1,7 +1,7 @@
 import { query } from '$app/server';
 import * as v from 'valibot';
 import { requireOrg } from '#lib/server/context.ts';
-import { auditCount, auditFacets, listAudit } from '#lib/server/services/audit.ts';
+import { activitySeries, auditCount, auditFacets, listAudit } from '#lib/server/services/audit.ts';
 import { hasFeature } from '#lib/server/ee/license.ts';
 
 const auditFilter = v.object({
@@ -22,4 +22,10 @@ export const getAuditLog = query(auditFilter, async (f) => {
 		auditCount(orgId)
 	]);
 	return { rows, hasMore, facets, total, canExport: hasFeature('audit_export') };
+});
+
+/** Per-day event counts for the dashboard activity chart (last 30 days). */
+export const getActivitySeries = query(async () => {
+	const { orgId } = await requireOrg();
+	return activitySeries(orgId, 30);
 });
