@@ -10,6 +10,7 @@ import { search } from '#lib/server/services/search.ts';
 import { getIntegration, listIntegrations } from '#lib/server/integrations/runtime.ts';
 import { idSchema, webhookInput } from '#lib/schemas.ts';
 import { assertNotDemo } from '#lib/server/demo-mode.ts';
+import { deliverToHook } from '#lib/server/services/events.ts';
 
 export const searchAll = query(v.pipe(v.string(), v.maxLength(100)), async (q) =>
 	search((await requireOrg()).orgId, q)
@@ -68,6 +69,28 @@ export const toggleWebhook = command(
 		void getWebhooks().refresh();
 	}
 );
+/** Sends a `test.ping` event to one webhook and returns the HTTP status. */
+export const testWebhook = command(idSchema, async (id) => {
+	assertNotDemo();
+	const { orgId } = await requireOrg('admin');
+	const [h] = await db
+		.select()
+		.from(webhook)
+		.where(and(eq(webhook.organizationId, orgId), eq(webhook.id, id)));
+	if (!h) error(404, 'Webhook not found');
+	const status = await deliverToHook(h, {
+		id: 'test',
+		type: 'test.ping',
+		organizationId: orgId,
+		entity: { type: 'webhook', id },
+		summary: 'Test webhook delivery',
+		data: {},
+		createdAt: new Date().toISOString()
+	});
+	void getWebhooks().refresh();
+	return { status };
+});
+
 export const deleteWebhook = command(idSchema, async (id) => {
 	const { orgId } = await requireOrg('admin');
 	await db.delete(webhook).where(and(eq(webhook.organizationId, orgId), eq(webhook.id, id)));

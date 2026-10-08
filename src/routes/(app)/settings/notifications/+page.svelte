@@ -118,6 +118,11 @@
 			'Members are notified when a record is shared with them.'
 		)}
 		{@render toggle(
+			'digest.unread',
+			'Unread digest email',
+			'Members receive a periodic email digest of unread notifications.'
+		)}
+		{@render toggle(
 			'workflow.notify',
 			'Workflow notifications',
 			'Inbox and email alerts produced by notify workflow rules.'

@@ -67,6 +67,18 @@ export const getEntityReport = query(
 	}
 );
 
+/** Admin: dump every entity's records as a JSON bundle. */
+export const exportOrgData = query(async () => {
+	const { orgId } = await requireOrg('admin');
+	const entities: Record<string, unknown[]> = {};
+	for (const d of listEntityDefs()) {
+		const { rows } = await listRecords(orgId, d.name, { limit: 5000, archivedOnly: true });
+		const { rows: live } = await listRecords(orgId, d.name, { limit: 5000 });
+		entities[d.name] = [...live, ...rows];
+	}
+	return { exportedAt: new Date().toISOString(), entities };
+});
+
 export const getEntityRecord = query(
 	v.object({ entity: entityName, id: v.string() }),
 	async ({ entity, id }) => {

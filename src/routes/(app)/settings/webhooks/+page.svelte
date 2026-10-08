@@ -7,7 +7,8 @@
 		getWebhooks,
 		createWebhook,
 		toggleWebhook,
-		deleteWebhook
+		deleteWebhook,
+		testWebhook
 	} from '#lib/remote/workspace.remote.ts';
 	import { formatRelative } from '#lib/format.ts';
 	import { toast } from 'svelte-sonner';
@@ -53,6 +54,16 @@
 								aria-label="Enabled"
 							/>
 							<code class="min-w-0 flex-1 truncate text-sm">{h.url}</code>
+							<Button
+								size="sm"
+								variant="ghost"
+								onclick={async () => {
+									const { status } = await testWebhook(h.id);
+									toast[status >= 200 && status < 300 ? 'success' : 'error'](
+										status ? `Delivered — HTTP ${status}` : 'Delivery failed'
+									);
+								}}>Test</Button
+							>
 							<Button
 								size="icon-sm"
 								variant="ghost"

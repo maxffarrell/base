@@ -11,6 +11,7 @@ export const NOTIFICATION_DEFAULTS: NotificationPrefs = {
 	'entity.deleted': true,
 	'entity.assigned': true,
 	'entity.shared': true,
+	'digest.unread': true,
 	'workflow.notify': true
 };
 
