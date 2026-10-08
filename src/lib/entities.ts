@@ -25,7 +25,8 @@ export type FieldType =
 	| 'email'
 	| 'url'
 	| 'phone'
-	| 'user';
+	| 'user'
+	| 'tags';
 
 export type EntityField = {
 	/** Column key on the entity's table and in record payloads. */

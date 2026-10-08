@@ -27,6 +27,7 @@ export const directoryContact = pgTable(
 		phone: text('phone'),
 		companyId: text('company_id').references(() => directoryCompany.id, { onDelete: 'set null' }),
 		stage: text('stage').notNull().default('lead'),
+		tags: text('tags').array(),
 		notes: text('notes'),
 		archivedAt: timestamp('archived_at', { withTimezone: true }),
 		...timestamps

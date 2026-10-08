@@ -1,9 +1,9 @@
 import { timingSafeEqual } from 'node:crypto';
 import { error, json } from '@sveltejs/kit';
 import { CRON_SECRET } from '$app/env/private';
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { and, desc, eq, gte, isNull, sql } from 'drizzle-orm';
 import { db } from '#lib/server/db/index.ts';
-import { inboxItem, member, organization, user } from '#lib/server/db/schema.ts';
+import { activity, inboxItem, member, organization, user } from '#lib/server/db/schema.ts';
 import { appOrigin, sendEmail } from '#lib/server/email.ts';
 import { renderEmail } from '#lib/server/email-template.ts';
 import { getNotificationPrefs } from '#lib/server/services/notifications.ts';
@@ -33,6 +33,15 @@ export const GET: RequestHandler = async ({ request }) => {
 			.from(member)
 			.innerJoin(user, eq(user.id, member.userId))
 			.where(eq(member.organizationId, org.id));
+		const [{ n: weekChanges }] = await db
+			.select({ n: sql<number>`count(*)`.mapWith(Number) })
+			.from(activity)
+			.where(
+				and(
+					eq(activity.organizationId, org.id),
+					gte(activity.createdAt, new Date(Date.now() - 7 * 86400_000))
+				)
+			);
 		for (const m of members) {
 			const items = await db
 				.select({ title: inboxItem.title })
@@ -51,7 +60,11 @@ export const GET: RequestHandler = async ({ request }) => {
 			const rendered = renderEmail({
 				orgName: org.name,
 				heading: `You have ${items.length > 10 ? '10+' : items.length} unread notification${items.length === 1 ? '' : 's'}`,
-				lines: [...items.slice(0, 10).map((i) => `• ${i.title}`), ...more],
+				lines: [
+					...items.slice(0, 10).map((i) => `• ${i.title}`),
+					...more,
+					`Workspace activity this week: ${weekChanges} change${weekChanges === 1 ? '' : 's'}`
+				],
 				action: { label: 'Open inbox', url: `${appOrigin()}/inbox` }
 			});
 			await sendEmail({ to: m.email, subject: rendered.text.split('\n')[0]!, ...rendered }).catch(

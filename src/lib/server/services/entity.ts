@@ -50,6 +50,9 @@ function fieldSchema(f: EntityField): v.GenericSchema {
 		case 'currency':
 			s = v.number();
 			break;
+		case 'tags':
+			s = v.array(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(40)));
+			break;
 		case 'boolean':
 			s = v.boolean();
 			break;
@@ -157,6 +160,10 @@ export async function listRecords(
 		const field = def.fields.find((f) => f.key === key);
 		const col = table[key];
 		if (!field || !col || value === '' || value == null) continue;
+		if (field.type === 'tags') {
+			conds.push(sql`${col}::text[] @> ${[value]}::text[]`);
+			continue;
+		}
 		conds.push(eq(col, field.type === 'boolean' ? value === 'true' : value));
 	}
 
