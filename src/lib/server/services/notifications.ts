@@ -10,6 +10,7 @@ export const NOTIFICATION_DEFAULTS: NotificationPrefs = {
 	'entity.created': true,
 	'entity.deleted': true,
 	'entity.assigned': true,
+	'entity.shared': true,
 	'workflow.notify': true
 };
 

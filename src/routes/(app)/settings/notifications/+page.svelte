@@ -113,6 +113,11 @@
 			'Members are notified when a user field is set or reassigned to them.'
 		)}
 		{@render toggle(
+			'entity.shared',
+			'Record shared',
+			'Members are notified when a record is shared with them.'
+		)}
+		{@render toggle(
 			'workflow.notify',
 			'Workflow notifications',
 			'Inbox and email alerts produced by notify workflow rules.'

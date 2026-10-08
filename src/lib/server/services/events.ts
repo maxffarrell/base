@@ -70,6 +70,20 @@ export async function emit(e: EventInput) {
 			});
 		})().catch((err) => console.error('assignment notification failed', err));
 	}
+	if (e.action === 'shared') {
+		void (async () => {
+			const prefs = await getNotificationPrefs(e.orgId);
+			if (!prefs['entity.shared']) return;
+			const users = ((e.data?.sharedWith as string[] | undefined) ?? []).filter(
+				(u) => u !== e.actorId
+			);
+			if (!users.length) return;
+			await inboxForUsers(e.orgId, users, 'entity.shared', e.entityId, {
+				title: e.summary,
+				href: `/${e.entityType}/${e.entityId}`
+			});
+		})().catch((err) => console.error('share notification failed', err));
+	}
 	void dispatchToIntegrations(event).catch((err) =>
 		console.error('integration dispatch failed', err)
 	);

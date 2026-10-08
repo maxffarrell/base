@@ -70,6 +70,30 @@ export const favorite = pgTable(
 	]
 );
 
+/** A record shared with a member — shows up in their "Shared with me" card. */
+export const entityShare = pgTable(
+	'entity_share',
+	{
+		id: id(),
+		organizationId: orgId(),
+		entityType: text('entity_type').notNull(),
+		entityId: text('entity_id').notNull(),
+		fromUserId: text('from_user_id').references(() => user.id, { onDelete: 'set null' }),
+		toUserId: text('to_user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		...timestamps
+	},
+	(t) => [
+		uniqueIndex('entity_share_unique_idx').on(
+			t.organizationId,
+			t.entityType,
+			t.entityId,
+			t.toUserId
+		)
+	]
+);
+
 export const documentBlob = pgTable('document_blob', {
 	storageKey: text('storage_key').primaryKey(),
 	data: text('data').notNull()
