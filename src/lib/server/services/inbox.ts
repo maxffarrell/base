@@ -36,6 +36,32 @@ export async function inboxForManagers(
 	return rows.length;
 }
 
+/** Same as inboxForManagers, but targets explicit user ids (e.g. assignees). */
+export async function inboxForUsers(
+	orgId: string,
+	userIds: string[],
+	kind: string,
+	entityId: string,
+	notice: InboxNotice
+) {
+	if (!userIds.length) return 0;
+	await db
+		.insert(inboxItem)
+		.values(
+			userIds.map((userId) => ({
+				organizationId: orgId,
+				userId,
+				kind,
+				entityId,
+				title: notice.title,
+				body: notice.body ?? null,
+				href: notice.href ?? null
+			}))
+		)
+		.onConflictDoNothing();
+	return userIds.length;
+}
+
 export async function listInbox(orgId: string, userId: string, limit = 30) {
 	const items = await db
 		.select({
