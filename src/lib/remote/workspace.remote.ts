@@ -5,7 +5,13 @@ import { error } from '@sveltejs/kit';
 import { command, query } from '$app/server';
 import { requireOrg } from '#lib/server/context.ts';
 import { db } from '#lib/server/db/index.ts';
-import { integrationInstall, member, user, webhook } from '#lib/server/db/schema.ts';
+import {
+	integrationInstall,
+	member,
+	user,
+	webhook,
+	webhookDelivery
+} from '#lib/server/db/schema.ts';
 import { search } from '#lib/server/services/search.ts';
 import { getIntegration, listIntegrations } from '#lib/server/integrations/runtime.ts';
 import { idSchema, webhookInput } from '#lib/schemas.ts';
@@ -41,6 +47,15 @@ export const getWebhooks = query(async () => {
 		.from(webhook)
 		.where(eq(webhook.organizationId, orgId))
 		.orderBy(desc(webhook.createdAt));
+});
+export const getWebhookDeliveries = query(idSchema, async (hookId) => {
+	const { orgId } = await requireOrg('admin');
+	return db
+		.select()
+		.from(webhookDelivery)
+		.where(and(eq(webhookDelivery.webhookId, hookId), eq(webhookDelivery.organizationId, orgId)))
+		.orderBy(desc(webhookDelivery.attemptedAt))
+		.limit(50);
 });
 export const createWebhook = command(webhookInput, async (input) => {
 	assertNotDemo();

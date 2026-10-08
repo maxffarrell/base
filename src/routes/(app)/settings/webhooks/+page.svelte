@@ -8,7 +8,8 @@
 		createWebhook,
 		toggleWebhook,
 		deleteWebhook,
-		testWebhook
+		testWebhook,
+		getWebhookDeliveries
 	} from '#lib/remote/workspace.remote.ts';
 	import { formatRelative } from '#lib/format.ts';
 	import { toast } from 'svelte-sonner';
@@ -17,6 +18,17 @@
 
 	const hooks = $derived(await getWebhooks());
 	let url = $state('');
+	let openLog = $state<string | null>(null);
+	let logItems = $state<Awaited<ReturnType<typeof getWebhookDeliveries>>>([]);
+
+	async function toggleLog(id: string) {
+		if (openLog === id) {
+			openLog = null;
+			return;
+		}
+		openLog = id;
+		logItems = await getWebhookDeliveries(id);
+	}
 
 	async function add(e: SubmitEvent) {
 		e.preventDefault();
@@ -88,7 +100,29 @@
 									>Last delivery {formatRelative(h.lastDeliveryAt)} · {h.lastDeliveryStatus ??
 										'failed'}</span
 								>{/if}
+							<button class="hover:text-foreground" onclick={() => toggleLog(h.id)}
+								>{openLog === h.id ? 'Hide' : 'Show'} delivery log</button
+							>
 						</div>
+						{#if openLog === h.id}
+							{#if logItems.length}
+								<ul class="ml-12 divide-y rounded border text-xs">
+									{#each logItems as d (d.id)}
+										<li class="flex items-center gap-3 px-2 py-1.5">
+											<span class={d.status && d.status < 300 ? 'text-green-600' : 'text-red-600'}
+												>{d.status || 'fail'}</span
+											>
+											<span class="flex-1 truncate font-mono">{d.eventType}</span>
+											<span class="text-muted-foreground">{formatRelative(d.attemptedAt)}</span>
+											{#if d.error}<span class="max-w-40 truncate text-red-600">{d.error}</span
+												>{/if}
+										</li>
+									{/each}
+								</ul>
+							{:else}
+								<p class="ml-12 text-xs text-muted-foreground">No deliveries yet.</p>
+							{/if}
+						{/if}
 					</li>
 				{/each}
 			</ul>

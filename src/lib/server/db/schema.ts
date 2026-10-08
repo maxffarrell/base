@@ -247,6 +247,23 @@ export const webhook = pgTable(
 	(t) => [index('webhook_org_idx').on(t.organizationId)]
 );
 
+/** Recent delivery attempts per webhook, shown in Settings → Webhooks. */
+export const webhookDelivery = pgTable(
+	'webhook_delivery',
+	{
+		id: id(),
+		webhookId: text('webhook_id')
+			.notNull()
+			.references(() => webhook.id, { onDelete: 'cascade' }),
+		organizationId: orgId(),
+		eventType: text('event_type').notNull(),
+		status: integer('status'),
+		error: text('error'),
+		attemptedAt: timestamp('attempted_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [index('webhook_delivery_hook_idx').on(t.webhookId, t.attemptedAt)]
+);
+
 /** A "when event, do action" automation rule built in Settings → Workflows. */
 export const workflow = pgTable(
 	'workflow',

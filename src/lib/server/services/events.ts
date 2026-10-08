@@ -1,7 +1,7 @@
 import { createHmac } from 'node:crypto';
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '#lib/server/db/index.ts';
-import { activity, webhook } from '#lib/server/db/schema.ts';
+import { activity, webhook, webhookDelivery } from '#lib/server/db/schema.ts';
 import { dispatchToIntegrations } from '#lib/server/integrations/runtime.ts';
 import { emailUsers, inboxForManagers, inboxForUsers } from '#lib/server/services/inbox.ts';
 import { getNotificationPrefs } from '#lib/server/services/notifications.ts';
@@ -132,6 +132,7 @@ export async function deliverToHook(
 ): Promise<number> {
 	const body = JSON.stringify(event);
 	let status = 0;
+	let error: string | null = null;
 	try {
 		const res = await fetch(h.url, {
 			method: 'POST',
@@ -144,11 +145,34 @@ export async function deliverToHook(
 			signal: AbortSignal.timeout(10_000)
 		});
 		status = res.status;
+	} catch (err) {
+		error = err instanceof Error ? err.message : String(err);
 	} finally {
 		await db
 			.update(webhook)
 			.set({ lastDeliveryAt: new Date(), lastDeliveryStatus: status })
 			.where(eq(webhook.id, h.id));
+		await db.insert(webhookDelivery).values({
+			webhookId: h.id,
+			organizationId: h.organizationId,
+			eventType: event.type,
+			status,
+			error
+		});
+		// Keep only the latest 50 attempts per hook.
+		const stale = await db
+			.select({ id: webhookDelivery.id })
+			.from(webhookDelivery)
+			.where(eq(webhookDelivery.webhookId, h.id))
+			.orderBy(desc(webhookDelivery.attemptedAt))
+			.offset(50);
+		if (stale.length)
+			await db.delete(webhookDelivery).where(
+				inArray(
+					webhookDelivery.id,
+					stale.map((d) => d.id)
+				)
+			);
 	}
 	return status;
 }

@@ -40,7 +40,8 @@
 		getLinkOptions,
 		importEntityRecords,
 		listEntityRecords,
-		setEntityArchived
+		setEntityArchived,
+		updateEntityRecord
 	} from '#lib/remote/entities.remote.ts';
 	import { getMembers } from '#lib/remote/workspace.remote.ts';
 	import { recordTitle } from '#lib/entities.ts';
@@ -108,10 +109,10 @@
 			: null
 	);
 
-	function kanbanCols(rows: Record<string, unknown>[]) {
+	function kanbanCols(rows: BoardRow[]) {
 		const opts = groupField?.options ?? [];
-		const by = new Map<string, Record<string, unknown>[]>(opts.map((o) => [o, []]));
-		const none: Record<string, unknown>[] = [];
+		const by = new Map<string, BoardRow[]>(opts.map((o) => [o, []]));
+		const none: BoardRow[] = [];
 		for (const r of rows) {
 			const v = r[groupField!.key] as string | null;
 			(by.get(v ?? '') ?? none).push(r);
@@ -120,6 +121,22 @@
 			...opts.map((o) => ({ key: o, label: o, items: by.get(o) ?? [] })),
 			{ key: 'none', label: 'No status', items: none }
 		];
+	}
+
+	type BoardRow = Record<string, unknown> & { id: string };
+
+	async function moveCard(row: BoardRow, to: string) {
+		const current = (row[groupField!.key] as string | null) ?? 'none';
+		if (to === current) return;
+		try {
+			await updateEntityRecord({
+				entity: def.name,
+				id: row.id,
+				input: { [groupField!.key]: to === 'none' ? null : to }
+			});
+		} catch (err) {
+			toast.error((err as { body?: { message?: string } })?.body?.message ?? 'Move rejected');
+		}
 	}
 
 	// CSV import: first row is field keys; values coerced to the field type.
@@ -511,7 +528,10 @@
 			</Empty.Root>
 		{:else if view === 'kanban' && kanbanQuery}
 			{#await kanbanQuery then result}
-				<KanbanBoard columns={kanbanCols(result.rows as Record<string, unknown>[])}>
+				<KanbanBoard
+					columns={kanbanCols(result.rows as BoardRow[])}
+					onmove={canWrite ? moveCard : undefined}
+				>
 					{#snippet card(row)}
 						<button
 							type="button"
