@@ -10,6 +10,7 @@
 	import Copy from '@lucide/svelte/icons/copy';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
 	import Link2 from '@lucide/svelte/icons/link-2';
+	import Share2 from '@lucide/svelte/icons/share-2';
 	import Printer from '@lucide/svelte/icons/printer';
 	import Star from '@lucide/svelte/icons/star';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
@@ -32,6 +33,9 @@
 		setEntityArchived
 	} from '#lib/remote/entities.remote.ts';
 	import { isFavorite, toggleFavorite } from '#lib/remote/favorites.remote.ts';
+	import { getShares, shareEntityRecord, unshareEntityRecord } from '#lib/remote/shares.remote.ts';
+	import { getMembers } from '#lib/remote/workspace.remote.ts';
+	import * as NativeSelect from '#lib/components/ui/native-select/index.js';
 	import { pushRecent } from '#lib/recents.ts';
 
 	const def = $derived(getEntityDef(page.params.entity ?? ''));
@@ -44,6 +48,16 @@
 	let aiSummary = $state<string | null>(null);
 	let aiBusy = $state(false);
 	let showDup = $state(false);
+	let showShare = $state(false);
+	const sharesQuery = $derived(def ? getShares({ entity: def.name, id }) : null);
+	const members = $derived(await getMembers());
+	let shareTarget = $state('');
+	const meId = $derived(page.data.user?.id ?? '');
+	const shareableMembers = $derived(
+		members.filter(
+			(m) => m.userId !== meId && !sharesQuery?.current?.some((s) => s.toUserId === m.userId)
+		)
+	);
 
 	$effect(() => {
 		const r = recordQuery?.current;
@@ -140,6 +154,9 @@
 						}}
 					>
 						<Link2 />
+					</Button>
+					<Button variant="ghost" size="sm" aria-label="Share" onclick={() => (showShare = true)}>
+						<Share2 />
 					</Button>
 					{#if def.archivable}
 						<Button variant="outline" size="sm" onclick={() => toggleArchive(record)}>
@@ -269,6 +286,62 @@
 				}}
 			/>
 		{/if}
+	</Modal.Content>
+</Modal.Root>
+
+<Modal.Root bind:open={showShare}>
+	<Modal.Content class="sm:max-w-md">
+		<Modal.Header>
+			<Modal.Title>Share {def?.label ?? 'record'}</Modal.Title>
+			<Modal.Description
+				>Shared members get an inbox notice and see it under “Shared with me”.</Modal.Description
+			>
+		</Modal.Header>
+		<div class="space-y-3">
+			{#if shareableMembers.length}
+				<div class="flex gap-2">
+					<NativeSelect.Root
+						class="h-9 flex-1"
+						value={shareTarget}
+						onchange={(e) => (shareTarget = (e.target as HTMLSelectElement).value)}
+					>
+						<NativeSelect.Option value="">Pick a member…</NativeSelect.Option>
+						{#each shareableMembers as m (m.userId)}
+							<NativeSelect.Option value={m.userId}>{m.name ?? m.email}</NativeSelect.Option>
+						{/each}
+					</NativeSelect.Root>
+					<Button
+						size="sm"
+						disabled={!shareTarget}
+						onclick={async () => {
+							if (!def || !shareTarget) return;
+							await shareEntityRecord({ entity: def.name, id, toUserId: shareTarget });
+							shareTarget = '';
+							toast.success('Shared');
+						}}>Share</Button
+					>
+				</div>
+			{/if}
+			{#if sharesQuery?.current?.length}
+				<ul class="divide-y">
+					{#each members.filter( (m) => sharesQuery.current?.some((s) => s.toUserId === m.userId) ) as m (m.userId)}
+						<li class="flex items-center justify-between py-2 text-sm">
+							<span class="min-w-0 truncate">{m.name ?? m.email}</span>
+							<Button
+								variant="ghost"
+								size="sm"
+								onclick={async () => {
+									if (!def) return;
+									await unshareEntityRecord({ entity: def.name, id, toUserId: m.userId });
+								}}>Remove</Button
+							>
+						</li>
+					{/each}
+				</ul>
+			{:else}
+				<p class="text-sm text-muted-foreground">Not shared with anyone yet.</p>
+			{/if}
+		</div>
 	</Modal.Content>
 </Modal.Root>
 

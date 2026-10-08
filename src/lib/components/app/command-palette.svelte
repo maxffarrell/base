@@ -9,8 +9,11 @@
 	import Box from '@lucide/svelte/icons/box';
 	import History from '@lucide/svelte/icons/history';
 	import Plus from '@lucide/svelte/icons/plus';
+	import * as Modal from '#lib/components/ui/modal/index.js';
+	import { Kbd } from '#lib/components/ui/kbd/index.js';
 
 	let { open = $bindable(false) }: { open?: boolean } = $props();
+	let helpOpen = $state(false);
 	let query = $state('');
 	let hits = $state<SearchHit[]>([]);
 	let recents = $state(readRecents());
@@ -60,6 +63,12 @@
 			open = true;
 			return;
 		}
+		if (e.key === '?') {
+			e.preventDefault();
+			helpOpen = !helpOpen;
+			return;
+		}
+		if (helpOpen) return;
 		if (pendingG) {
 			pendingG = false;
 			clearTimeout(gTimer);
@@ -129,3 +138,29 @@
 		</Command.Group>
 	</Command.List>
 </Command.Dialog>
+
+<Modal.Root bind:open={helpOpen}>
+	<Modal.Content class="sm:max-w-md">
+		<Modal.Header>
+			<Modal.Title>Keyboard shortcuts</Modal.Title>
+		</Modal.Header>
+		<ul class="divide-y text-sm">
+			<li class="flex justify-between py-2">
+				<span>Command palette</span><Kbd>⌘K</Kbd>
+			</li>
+			<li class="flex justify-between py-2">
+				<span>Search</span><Kbd>/</Kbd>
+			</li>
+			<li class="flex justify-between py-2">
+				<span>Go to…</span>
+				<span class="text-muted-foreground"
+					>G then a key — {#each allNav as n (n.href)}<Kbd>{n.key}</Kbd> {n.label}
+					{/each}</span
+				>
+			</li>
+			<li class="flex justify-between py-2">
+				<span>This help</span><Kbd>?</Kbd>
+			</li>
+		</ul>
+	</Modal.Content>
+</Modal.Root>

@@ -8,6 +8,7 @@
 	import { getActivitySeries, getAuditLog } from '#lib/remote/audit.remote.ts';
 	import { listEntityRecords } from '#lib/remote/entities.remote.ts';
 	import { getFavorites } from '#lib/remote/favorites.remote.ts';
+	import { getSharedWithMe } from '#lib/remote/shares.remote.ts';
 
 	const defs = listEntityDefs();
 	const org = $derived(page.data.org?.name ?? 'Workspace');
@@ -191,6 +192,26 @@
 			{/await}
 		{/if}
 	{/each}
+
+	{#await getSharedWithMe() then shared}
+		{#if shared.length}
+			<Card.Root>
+				<Card.Header><Card.Title class="text-base">Shared with me</Card.Title></Card.Header>
+				<Card.Content>
+					<ul class="divide-y">
+						{#each shared as s (s.entity + s.id)}
+							<li class="flex items-baseline justify-between gap-3 py-2 text-sm">
+								<a class="min-w-0 truncate font-medium hover:underline" href="/{s.entity}/{s.id}"
+									>{s.title}</a
+								>
+								<span class="shrink-0 text-xs text-muted-foreground">from {s.by}</span>
+							</li>
+						{/each}
+					</ul>
+				</Card.Content>
+			</Card.Root>
+		{/if}
+	{/await}
 
 	{#if favorites.length}
 		<Card.Root>
