@@ -201,6 +201,37 @@ async function write(
 	return row;
 }
 
+/** user-type fields whose value is set (or, on update, changed) — drives 'assigned' events. */
+function newlyAssigned(def: EntityDef, row: EntityRecord, existing?: EntityRecord): string[] {
+	return def.fields
+		.filter((f) => f.type === 'user')
+		.filter((f) => {
+			const v = row[f.key];
+			return typeof v === 'string' && v.length > 0 && (!existing || existing[f.key] !== v);
+		})
+		.map((f) => row[f.key] as string);
+}
+
+/** Emits an 'assigned' event when any user field gained/changed a member. */
+function emitAssigned(
+	ctx: OrgContext,
+	reg: EntityRegistration,
+	row: EntityRecord,
+	existing?: EntityRecord
+) {
+	const assignees = newlyAssigned(reg.def, row, existing);
+	if (!assignees.length) return;
+	emit({
+		orgId: ctx.orgId,
+		actorId: ctx.userId,
+		entityType: reg.def.name,
+		entityId: row.id,
+		action: 'assigned',
+		summary: `${recordTitle(reg.def, row)} assigned`,
+		data: { assignees }
+	});
+}
+
 export async function createRecord(
 	ctx: OrgContext,
 	name: string,
@@ -216,6 +247,7 @@ export async function createRecord(
 		action: 'created',
 		summary: `${recordTitle(reg.def, row)} created`
 	});
+	emitAssigned(ctx, reg, row);
 	return row;
 }
 
@@ -236,6 +268,7 @@ export async function updateRecord(
 		action: 'updated',
 		summary: `${recordTitle(reg.def, row)} updated`
 	});
+	emitAssigned(ctx, reg, row, existing);
 	return row;
 }
 

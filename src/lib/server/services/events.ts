@@ -3,7 +3,7 @@ import { and, eq } from 'drizzle-orm';
 import { db } from '#lib/server/db/index.ts';
 import { activity, webhook } from '#lib/server/db/schema.ts';
 import { dispatchToIntegrations } from '#lib/server/integrations/runtime.ts';
-import { inboxForManagers } from '#lib/server/services/inbox.ts';
+import { inboxForManagers, inboxForUsers } from '#lib/server/services/inbox.ts';
 import { getNotificationPrefs } from '#lib/server/services/notifications.ts';
 import { runWorkflows } from '#lib/server/services/workflows.ts';
 
@@ -55,6 +55,20 @@ export async function emit(e: EventInput) {
 				});
 			}
 		})().catch((err) => console.error('inbox notification failed', err));
+	}
+	if (e.action === 'assigned') {
+		void (async () => {
+			const prefs = await getNotificationPrefs(e.orgId);
+			if (!prefs['entity.assigned']) return;
+			const users = ((e.data?.assignees as string[] | undefined) ?? []).filter(
+				(u) => u !== e.actorId
+			);
+			if (!users.length) return;
+			await inboxForUsers(e.orgId, users, 'entity.assigned', e.entityId, {
+				title: e.summary,
+				href: `/${e.entityType}/${e.entityId}`
+			});
+		})().catch((err) => console.error('assignment notification failed', err));
 	}
 	void dispatchToIntegrations(event).catch((err) =>
 		console.error('integration dispatch failed', err)

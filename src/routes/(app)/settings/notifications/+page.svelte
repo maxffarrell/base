@@ -108,6 +108,11 @@
 			'Owners and admins are notified when a record is deleted.'
 		)}
 		{@render toggle(
+			'entity.assigned',
+			'Record assigned',
+			'Members are notified when a user field is set or reassigned to them.'
+		)}
+		{@render toggle(
 			'workflow.notify',
 			'Workflow notifications',
 			'Inbox and email alerts produced by notify workflow rules.'

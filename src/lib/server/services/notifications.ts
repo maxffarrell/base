@@ -9,6 +9,7 @@ export type NotificationPrefs = v.InferOutput<typeof notificationSettingsInput>;
 export const NOTIFICATION_DEFAULTS: NotificationPrefs = {
 	'entity.created': true,
 	'entity.deleted': true,
+	'entity.assigned': true,
 	'workflow.notify': true
 };
 
