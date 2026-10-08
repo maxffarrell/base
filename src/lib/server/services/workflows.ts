@@ -119,7 +119,7 @@ export async function runWorkflows(event: BaseEvent) {
 					await updateRecord(
 						{
 							orgId: event.organizationId,
-							userId: 'system',
+							userId: '',
 							role: 'admin',
 							org: { id: event.organizationId, name: '', slug: '', logo: null }
 						},
@@ -147,7 +147,7 @@ export async function runWorkflows(event: BaseEvent) {
 					await createRecord(
 						{
 							orgId: event.organizationId,
-							userId: 'system',
+							userId: '',
 							role: 'admin',
 							org: { id: event.organizationId, name: '', slug: '', logo: null }
 						},

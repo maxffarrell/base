@@ -23,7 +23,7 @@ export async function emit(e: EventInput) {
 		.insert(activity)
 		.values({
 			organizationId: e.orgId,
-			actorId: e.actorId ?? null,
+			actorId: e.actorId || null,
 			entityType: e.entityType,
 			entityId: e.entityId,
 			action: e.action,
