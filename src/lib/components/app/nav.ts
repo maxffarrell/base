@@ -3,6 +3,7 @@ import LayoutDashboard from '@lucide/svelte/icons/layout-dashboard';
 import Settings from '@lucide/svelte/icons/settings';
 import Puzzle from '@lucide/svelte/icons/puzzle';
 import Box from '@lucide/svelte/icons/box';
+import ChartColumn from '@lucide/svelte/icons/chart-column';
 import { entityLabel, listEntityDefs } from '#lib/entities.ts';
 import type { Component } from 'svelte';
 
@@ -23,6 +24,7 @@ export const mainNav: NavItem[] = [
 ];
 
 export const secondaryNav: NavItem[] = [
+	{ href: '/reports', label: 'Reports', icon: ChartColumn, key: 'r' },
 	{ href: '/settings/integrations', label: 'Integrations', icon: Puzzle, key: 'i' },
 	{ href: '/settings', label: 'Settings', icon: Settings, key: 's' }
 ];

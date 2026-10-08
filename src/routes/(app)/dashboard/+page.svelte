@@ -3,7 +3,7 @@
 	import * as Card from '#lib/components/ui/card/index.js';
 	import PageHeader from '#lib/components/app/page-header.svelte';
 	import { getEntityDef, listEntityDefs } from '#lib/entities.ts';
-	import { formatRelative } from '#lib/format.ts';
+	import { formatDate, formatRelative } from '#lib/format.ts';
 	import '#lib/modules/index.ts';
 	import { getActivitySeries, getAuditLog } from '#lib/remote/audit.remote.ts';
 	import { listEntityRecords } from '#lib/remote/entities.remote.ts';
@@ -50,6 +50,21 @@
 	}
 
 	const favorites = $derived(await getFavorites());
+
+	/** Entities with a `list` date field feed the "Past due" card. */
+	const dated = $derived(
+		defs
+			.map((d) => ({ def: d, field: d.fields.find((f) => f.type === 'date' && f.list) }))
+			.filter((x) => x.field)
+	);
+	const today = new Date().toISOString().slice(0, 10);
+
+	async function overdueItems(entity: string, key: string) {
+		const { rows } = await listEntityRecords({ entity, limit: 500 });
+		return (rows as Record<string, unknown>[]).filter(
+			(r) => typeof r[key] === 'string' && (r[key] as string).slice(0, 10) < today
+		);
+	}
 	const me = $derived(page.data.user?.id ?? '');
 	/** Defs with a `user` field — each becomes an "Assigned to me" section. */
 	const assignable = $derived(
@@ -147,6 +162,35 @@
 			</div>
 		</Card.Content>
 	</Card.Root>
+
+	{#each dated as { def: d, field } (d.name)}
+		{#if field}
+			{#await overdueItems(d.name, field.key) then items}
+				{#if items.length}
+					<Card.Root>
+						<Card.Header>
+							<Card.Title class="text-base">Past due · {d.labelPlural ?? `${d.label}s`}</Card.Title>
+							<Card.Description>{field.label} before today</Card.Description>
+						</Card.Header>
+						<Card.Content>
+							<ul class="divide-y">
+								{#each items.slice(0, 6) as r (r.id)}
+									<li class="flex items-baseline justify-between gap-3 py-2 text-sm">
+										<a class="min-w-0 truncate font-medium hover:underline" href="/{d.name}/{r.id}"
+											>{r[d.titleField ?? 'id'] ?? r.id}</a
+										>
+										<span class="shrink-0 text-xs text-destructive"
+											>{formatDate(String(r[field.key]).slice(0, 10))}</span
+										>
+									</li>
+								{/each}
+							</ul>
+						</Card.Content>
+					</Card.Root>
+				{/if}
+			{/await}
+		{/if}
+	{/each}
 
 	{#if favorites.length}
 		<Card.Root>

@@ -142,6 +142,42 @@ export async function listRecords(
 	return { rows, count };
 }
 
+/** Group-by aggregate for the report builder: count + optional numeric sum. */
+export async function entityReport(
+	orgId: string,
+	name: string,
+	groupBy: string,
+	sumField?: string
+) {
+	const reg = getEntity(name);
+	const { def, table } = reg;
+	const gf = def.fields.find(
+		(f) =>
+			f.key === groupBy &&
+			(f.type === 'select' || f.type === 'boolean' || f.type === 'link' || f.type === 'user')
+	);
+	const gcol = table[groupBy];
+	if (!gf || !gcol) error(422, 'Cannot group by that field');
+	const sf = sumField
+		? def.fields.find((f) => f.key === sumField && (f.type === 'currency' || f.type === 'number'))
+		: null;
+	if (sumField && (!sf || !table[sumField])) error(422, 'Cannot sum that field');
+
+	const conds = [eq(table.organizationId, orgId)];
+	if (def.archivable && table.archivedAt) conds.push(isNull(table.archivedAt));
+	const rows = await db
+		.select({
+			key: gcol,
+			count: sql<number>`count(*)::int`,
+			sum: sf ? sql<number>`coalesce(sum(${table[sumField!]}),0)::bigint` : sql<number>`0`
+		})
+		.from(table)
+		.where(and(...conds))
+		.groupBy(gcol)
+		.orderBy(desc(sql`2`));
+	return rows.map((r) => ({ key: String(r.key ?? ''), count: r.count, sum: Number(r.sum) }));
+}
+
 export async function getRecord(orgId: string, name: string, id: string): Promise<EntityRecord> {
 	const reg = getEntity(name);
 	const [row] = await db
