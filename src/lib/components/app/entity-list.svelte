@@ -8,6 +8,7 @@
 	import * as Table from '#lib/components/ui/table/index.js';
 	import * as Modal from '#lib/components/ui/modal/index.js';
 	import * as NativeSelect from '#lib/components/ui/native-select/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
 	import * as Empty from '#lib/components/ui/empty/index.js';
 	import * as Pagination from '#lib/components/ui/pagination/index.js';
 	import ArrowDown from '@lucide/svelte/icons/arrow-down';
@@ -17,6 +18,7 @@
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import Plus from '@lucide/svelte/icons/plus';
 	import Search from '@lucide/svelte/icons/search';
+	import Columns3 from '@lucide/svelte/icons/columns-3';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import Upload from '@lucide/svelte/icons/upload';
 	import Download from '@lucide/svelte/icons/download';
@@ -42,6 +44,7 @@
 	} from '#lib/remote/entities.remote.ts';
 	import { getMembers } from '#lib/remote/workspace.remote.ts';
 	import { recordTitle } from '#lib/entities.ts';
+	import { readHiddenCols, writeHiddenCols } from '#lib/colprefs.ts';
 	import { cn } from '#lib/utils.js';
 
 	/** Generic list view: search, per-field filters, sortable columns, pagination,
@@ -49,9 +52,22 @@
 	let { def }: { def: EntityDef } = $props();
 
 	const PAGE_SIZE = 25;
-	const columns = $derived(
-		def.fields.filter((f) => f.list || (def.searchFields ?? []).includes(f.key)).slice(0, 6)
+	const colFields = $derived(
+		def.fields.filter((f) => f.list || (def.searchFields ?? []).includes(f.key))
 	);
+	/** Per-user hidden columns (writable derived); falls back to "first 6". */
+	let hiddenCols = $derived<string[]>(
+		readHiddenCols(def.name) ?? colFields.slice(6).map((x) => x.key)
+	);
+	const columns = $derived.by(() => {
+		const visible = colFields.filter((f) => !hiddenCols.includes(f.key));
+		return visible.length ? visible : colFields.slice(0, 1);
+	});
+
+	function toggleCol(key: string, show: boolean) {
+		hiddenCols = show ? hiddenCols.filter((k) => k !== key) : [...new Set([...hiddenCols, key])];
+		writeHiddenCols(def.name, hiddenCols);
+	}
 	const filterFields = $derived(def.fields.filter((f) => f.filterable));
 
 	let q = $state('');
@@ -424,6 +440,28 @@
 			</label>
 		{/if}
 		<div class="ml-auto flex items-center gap-2">
+			{#if view === 'table' && colFields.length > 1}
+				<DropdownMenu.Root>
+					<DropdownMenu.Trigger>
+						{#snippet child({ props })}
+							<Button {...props} variant="outline" size="sm" class="h-8 gap-1.5">
+								<Columns3 class="size-3.5" />
+								<span class="hidden sm:inline">Columns</span>
+							</Button>
+						{/snippet}
+					</DropdownMenu.Trigger>
+					<DropdownMenu.Content align="end" class="w-48">
+						{#each colFields as f (f.key)}
+							<DropdownMenu.CheckboxItem
+								checked={columns.some((c) => c.key === f.key)}
+								onCheckedChange={(v) => toggleCol(f.key, v === true)}
+							>
+								{f.label}
+							</DropdownMenu.CheckboxItem>
+						{/each}
+					</DropdownMenu.Content>
+				</DropdownMenu.Root>
+			{/if}
 			<ViewSwitcher {views} bind:value={view} />
 			<SavedViewsMenu page={def.name} current={viewState} onapply={applyView} />
 		</div>
