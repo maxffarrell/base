@@ -17,3 +17,17 @@ export function writeHiddenCols(entity: string, hidden: string[]) {
 	if (typeof localStorage === 'undefined') return;
 	localStorage.setItem(key(entity), JSON.stringify(hidden));
 }
+
+const viewKey = (page: string) => `base:default-view:${page}`;
+
+/** Saved-view id applied automatically on a list page, or null. */
+export function readDefaultView(page: string): string | null {
+	if (typeof localStorage === 'undefined') return null;
+	return localStorage.getItem(viewKey(page));
+}
+
+export function writeDefaultView(page: string, viewId: string | null) {
+	if (typeof localStorage === 'undefined') return;
+	if (viewId === null) localStorage.removeItem(viewKey(page));
+	else localStorage.setItem(viewKey(page), viewId);
+}

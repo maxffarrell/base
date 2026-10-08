@@ -44,7 +44,8 @@
 	} from '#lib/remote/entities.remote.ts';
 	import { getMembers } from '#lib/remote/workspace.remote.ts';
 	import { recordTitle } from '#lib/entities.ts';
-	import { readHiddenCols, writeHiddenCols } from '#lib/colprefs.ts';
+	import { getSavedViews } from '#lib/remote/views.remote.ts';
+	import { readDefaultView, readHiddenCols, writeHiddenCols } from '#lib/colprefs.ts';
 	import { cn } from '#lib/utils.js';
 
 	/** Generic list view: search, per-field filters, sortable columns, pagination,
@@ -233,11 +234,26 @@
 		}
 	}
 
+	let appliedDefault = false;
 	$effect(() => {
 		if (def.defaultSort && !sort.key) sort = { ...def.defaultSort };
 		if (page.url.searchParams.get('new') === '1') showNew = true;
+		let hasUrlFilters = false;
 		for (const [k, v] of page.url.searchParams)
-			if (k.startsWith('filter_')) filters[k.slice(7)] = v;
+			if (k.startsWith('filter_')) {
+				filters[k.slice(7)] = v;
+				hasUrlFilters = true;
+			}
+		// No explicit URL filters? Apply the user's default saved view once.
+		if (!hasUrlFilters && !appliedDefault) {
+			appliedDefault = true;
+			const defaultId = readDefaultView(def.name);
+			if (defaultId)
+				void getSavedViews(def.name).then((vs) => {
+					const v = vs.find((x) => x.id === defaultId);
+					if (v) applyView(v.state);
+				});
+		}
 		for (const f of def.fields) {
 			if (f.type === 'link' && f.linkTo && !linkTitles[f.key]) {
 				void getLinkOptions(f.linkTo).then((opts) => {

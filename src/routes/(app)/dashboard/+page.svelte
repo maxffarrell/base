@@ -5,13 +5,30 @@
 	import { getEntityDef, listEntityDefs } from '#lib/entities.ts';
 	import { formatRelative } from '#lib/format.ts';
 	import '#lib/modules/index.ts';
-	import { getAuditLog } from '#lib/remote/audit.remote.ts';
+	import { getActivitySeries, getAuditLog } from '#lib/remote/audit.remote.ts';
 	import { listEntityRecords } from '#lib/remote/entities.remote.ts';
 	import { getFavorites } from '#lib/remote/favorites.remote.ts';
 
 	const defs = listEntityDefs();
 	const org = $derived(page.data.org?.name ?? 'Workspace');
 	const audit = $derived(await getAuditLog({}));
+	const series = $derived(await getActivitySeries());
+
+	/** Last 14 days of activity events, gap-filled for the bar chart. */
+	const activityBuckets = $derived.by(() => {
+		const counts: Record<string, number> = {};
+		for (const r of series) counts[r.day] = r.count;
+		return Array.from({ length: 14 }, (_, i) => {
+			const d = new Date(Date.now() - (13 - i) * 86400_000);
+			const key = d.toISOString().slice(0, 10);
+			return {
+				day: key,
+				count: counts[key] ?? 0,
+				label: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+			};
+		});
+	});
+	const maxActivity = $derived(Math.max(1, ...activityBuckets.map((b) => b.count)));
 
 	/** First select field per def — used for the status breakdown bar on each card. */
 	const groupFieldOf = (name: string) =>
@@ -106,6 +123,30 @@
 			</a>
 		{/each}
 	</div>
+
+	<Card.Root>
+		<Card.Header>
+			<Card.Title class="text-base">Activity</Card.Title>
+			<Card.Description>Record events per day, last 14 days</Card.Description>
+		</Card.Header>
+		<Card.Content>
+			<div class="flex h-24 items-end gap-1" role="img" aria-label="Activity by day">
+				{#each activityBuckets as b (b.day)}
+					<div class="group relative min-w-0 flex-1">
+						<div
+							class="w-full rounded-t bg-primary/70 transition-colors group-hover:bg-primary"
+							style="height: {Math.max(2, (b.count / maxActivity) * 96)}px"
+						></div>
+						<div
+							class="pointer-events-none absolute -top-7 left-1/2 z-10 hidden -translate-x-1/2 rounded bg-popover px-1.5 py-0.5 text-xs whitespace-nowrap text-popover-foreground shadow group-hover:block"
+						>
+							{b.label} · {b.count}
+						</div>
+					</div>
+				{/each}
+			</div>
+		</Card.Content>
+	</Card.Root>
 
 	{#if favorites.length}
 		<Card.Root>
