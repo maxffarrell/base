@@ -25,6 +25,7 @@ import type { EntityDef, EntityField } from '#lib/entities.ts';
 import { recordTitle } from '#lib/entities.ts';
 import type { OrgContext } from '#lib/server/context.ts';
 import { db } from '#lib/server/db/index.ts';
+import { recordWatch } from '#lib/server/db/schema.ts';
 import { emit } from '#lib/server/services/events.ts';
 import {
 	getEntity,
@@ -352,6 +353,11 @@ export async function createRecord(
 		action: 'created',
 		summary: `${recordTitle(reg.def, row)} created`
 	});
+	// Creators auto-follow their records so later changes reach their inbox.
+	await db
+		.insert(recordWatch)
+		.values({ organizationId: ctx.orgId, userId: ctx.userId, entityType: name, entityId: row.id })
+		.onConflictDoNothing();
 	emitAssigned(ctx, reg, row);
 	return row;
 }
