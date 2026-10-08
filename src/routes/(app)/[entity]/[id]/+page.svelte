@@ -31,6 +31,7 @@
 		setEntityArchived
 	} from '#lib/remote/entities.remote.ts';
 	import { isFavorite, toggleFavorite } from '#lib/remote/favorites.remote.ts';
+	import { pushRecent } from '#lib/recents.ts';
 
 	const def = $derived(getEntityDef(page.params.entity ?? ''));
 	const id = $derived(page.params.id ?? '');
@@ -42,6 +43,12 @@
 	let aiSummary = $state<string | null>(null);
 	let aiBusy = $state(false);
 	let showDup = $state(false);
+
+	$effect(() => {
+		const r = recordQuery?.current;
+		if (def && r)
+			pushRecent({ entity: def.name, label: def.label, id, title: recordTitle(def, r) });
+	});
 
 	/** Pre-fill the create form from this record — no id, so it creates a copy. */
 	const dupSeed = $derived.by(() => {
