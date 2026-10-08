@@ -70,6 +70,10 @@
 		writeHiddenCols(def.name, hiddenCols);
 	}
 	const filterFields = $derived(def.fields.filter((f) => f.filterable));
+	const numericCols = $derived(columns.filter((f) => f.type === 'currency' || f.type === 'number'));
+	/** Page-sum for a currency/number column. */
+	const colSum = (rows: Record<string, unknown>[], f: EntityField) =>
+		rows.reduce((s, r) => s + (typeof r[f.key] === 'number' ? (r[f.key] as number) : 0), 0);
 
 	let q = $state('');
 	let filters = $state<Record<string, string>>({});
@@ -600,6 +604,22 @@
 							</Table.Row>
 						{/each}
 					</Table.Body>
+					{#if numericCols.length && result.rows.length}
+						<Table.Footer>
+							<Table.Row>
+								<Table.Cell class="text-xs text-muted-foreground">Page total</Table.Cell>
+								{#each columns as f (f.key)}
+									<Table.Cell class="font-medium tabular-nums">
+										{#if numericCols.includes(f)}
+											{f.type === 'currency'
+												? formatMoney(colSum(result.rows as Record<string, unknown>[], f))
+												: colSum(result.rows as Record<string, unknown>[], f)}
+										{/if}
+									</Table.Cell>
+								{/each}
+							</Table.Row>
+						</Table.Footer>
+					{/if}
 				</Table.Root>
 			</div>
 			<div class="flex items-center justify-between text-sm text-muted-foreground">

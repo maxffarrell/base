@@ -35,6 +35,12 @@ export const getInbox = query(async () => {
 	return listInbox(orgId, userId);
 });
 
+/** Full inbox for the /inbox page — more items than the bell popover. */
+export const getInboxPage = query(async () => {
+	const { orgId, userId } = await requireOrg();
+	return listInbox(orgId, userId, 200);
+});
+
 export const markInboxRead = command(
 	v.object({ ids: v.array(v.pipe(v.string(), v.minLength(1))), all: v.optional(v.boolean()) }),
 	async ({ ids, all }) => {

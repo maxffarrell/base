@@ -84,5 +84,12 @@
 				{/each}
 			</ul>
 		{/if}
+		<div class="border-t px-4 py-2">
+			<a
+				href="/inbox"
+				class="text-xs text-muted-foreground hover:text-foreground"
+				onclick={() => (open = false)}>View all notifications</a
+			>
+		</div>
 	</Popover.Content>
 </Popover.Root>
