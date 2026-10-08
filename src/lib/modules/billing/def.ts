@@ -18,7 +18,16 @@ defineEntity({
 	searchFields: ['number'],
 	defaultSort: { key: 'issuedDate', dir: 'desc' },
 	fields: [
-		{ key: 'number', label: 'Number', type: 'text', required: true, list: true, sortable: true },
+		{
+			key: 'number',
+			label: 'Number',
+			type: 'text',
+			required: true,
+			list: true,
+			sortable: true,
+			section: 'Details',
+			help: 'Your own reference, e.g. INV-0042'
+		},
 		{
 			key: 'companyId',
 			label: 'Company',
@@ -50,7 +59,8 @@ defineEntity({
 			type: 'currency',
 			required: true,
 			list: true,
-			sortable: true
+			sortable: true,
+			section: 'Amounts & dates'
 		},
 		{ key: 'issuedDate', label: 'Issued', type: 'date', list: true, sortable: true },
 		{ key: 'dueDate', label: 'Due', type: 'date', list: true, sortable: true, filterable: false },

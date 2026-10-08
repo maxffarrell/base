@@ -13,6 +13,7 @@
 	import {
 		createEntityRecord,
 		getLinkOptions,
+		listEntityRecords,
 		updateEntityRecord
 	} from '#lib/remote/entities.remote.ts';
 	import { getMembers } from '#lib/remote/workspace.remote.ts';
@@ -99,6 +100,23 @@
 		}
 	}
 
+	/** Non-blocking heads-up when a record with a matching title already exists. */
+	let dupCount = $state(0);
+	$effect(() => {
+		const tf = def.titleField;
+		if (record || !tf || !def.searchFields?.includes(tf)) return;
+		const v = String(values[tf] ?? '').trim();
+		if (!v) {
+			dupCount = 0;
+			return;
+		}
+		const t = setTimeout(async () => {
+			const { count } = await listEntityRecords({ entity: def.name, q: v, limit: 1 });
+			if (String(values[tf] ?? '').trim() === v) dupCount = count;
+		}, 300);
+		return () => clearTimeout(t);
+	});
+
 	async function submit(e: SubmitEvent) {
 		e.preventDefault();
 		attempted = true;
@@ -154,7 +172,14 @@
 		{/if}
 	{/if}
 	<Field.Group class="grid gap-4 sm:grid-cols-2">
-		{#each editable as f (f.key)}
+		{#each editable as f, i (f.key)}
+			{#if f.section && f.section !== editable[i - 1]?.section}
+				<h3
+					class="mt-2 -mb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase sm:col-span-2"
+				>
+					{f.section}
+				</h3>
+			{/if}
 			<Field.Field class={cn(f.type === 'textarea' && 'sm:col-span-2')}>
 				<Field.Label for="ef-{f.key}">{f.label}{f.required ? ' *' : ''}</Field.Label>
 				{#if f.type === 'textarea'}
@@ -207,11 +232,18 @@
 						bind:value={values[f.key] as string}
 					/>
 				{/if}
+				{#if f.help}<Field.Description>{f.help}</Field.Description>{/if}
 				{#if missing(f)}<Field.Error>{f.label} is required</Field.Error>{/if}
 			</Field.Field>
 		{/each}
 	</Field.Group>
-	<div class="flex justify-end gap-2">
+	<div class="flex items-center justify-end gap-2">
+		{#if !record && dupCount > 0}
+			<p class="mr-auto text-xs text-amber-600">
+				{dupCount} existing {def.label.toLowerCase()}{dupCount === 1 ? '' : 's'} match
+				{dupCount === 1 ? 'es' : ''} this {def.titleField}
+			</p>
+		{/if}
 		<Button type="submit" disabled={saving}
 			>{record ? 'Save changes' : `Create ${def.label}`}</Button
 		>

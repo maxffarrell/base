@@ -46,6 +46,10 @@ export type EntityField = {
 	/** Rendered read-only in forms (e.g. computed or system fields). */
 	readonly?: boolean;
 	placeholder?: string;
+	/** Helper text under the input in forms. */
+	help?: string;
+	/** Form section heading — fields sharing a section group under one label. */
+	section?: string;
 	/** Per-entity workflow config: transitions enforced on `type: 'select'` status fields. */
 	transitions?: Record<string, string[]>;
 };
