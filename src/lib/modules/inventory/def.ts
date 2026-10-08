@@ -26,6 +26,7 @@ defineEntity({
 			list: true,
 			sortable: true,
 			pattern: '^[A-Z0-9-]{4,20}$',
+			unique: true,
 			placeholder: 'WH-1024',
 			help: '4–20 chars: capitals, digits, dashes'
 		},

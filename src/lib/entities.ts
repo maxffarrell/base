@@ -55,6 +55,10 @@ export type EntityField = {
 	default?: unknown;
 	/** Helper text under the input in forms. */
 	help?: string;
+	/** Server-enforced uniqueness per org — writes 409 on conflict. */
+	unique?: boolean;
+	/** Exclude from generated forms and list columns (API still exposes it). */
+	hidden?: boolean;
 	/** Form section heading — fields sharing a section group under one label. */
 	section?: string;
 	/** Per-entity workflow config: transitions enforced on `type: 'select'` status fields. */

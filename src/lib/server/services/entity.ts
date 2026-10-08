@@ -4,7 +4,21 @@
  * actions; every mutation runs the entity's hook lifecycle and emits an event
  * (activity feed + webhooks + workflows + integrations fan out from there).
  */
-import { and, asc, desc, eq, ilike, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
+import {
+	and,
+	asc,
+	desc,
+	eq,
+	getTableColumns,
+	ilike,
+	inArray,
+	isNotNull,
+	isNull,
+	or,
+	sql,
+	type AnyColumn,
+	type SQL
+} from 'drizzle-orm';
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
 import type { EntityDef, EntityField } from '#lib/entities.ts';
@@ -230,6 +244,23 @@ async function write(
 	const values = Object.fromEntries(
 		def.fields.filter((f) => !f.readonly && f.key in data).map((f) => [f.key, data[f.key]])
 	);
+
+	// Server-side uniqueness for `unique` fields.
+	const cols = getTableColumns(table) as unknown as Record<string, AnyColumn>;
+	for (const f of def.fields) {
+		if (!f.unique || values[f.key] == null) continue;
+		const conds: SQL[] = [
+			eq(table.organizationId, ctx.orgId),
+			eq(cols[f.key]!, values[f.key] as never)
+		];
+		if (existing) conds.push(sql`${table.id} <> ${existing.id}`);
+		const [clash] = await db
+			.select({ id: table.id })
+			.from(table)
+			.where(and(...conds))
+			.limit(1);
+		if (clash) error(409, `${def.label} with this ${f.label.toLowerCase()} already exists`);
+	}
 
 	let row: EntityRecord | undefined;
 	if (existing) {

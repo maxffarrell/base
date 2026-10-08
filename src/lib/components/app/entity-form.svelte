@@ -39,7 +39,7 @@
 		onsaved?: (record: Record<string, unknown>) => void;
 	} = $props();
 
-	const editable = $derived(def.fields.filter((f) => !f.readonly));
+	const editable = $derived(def.fields.filter((f) => !f.readonly && !f.hidden));
 
 	function buildInitial() {
 		const initial: Record<string, unknown> = {};

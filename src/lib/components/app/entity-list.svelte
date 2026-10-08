@@ -55,7 +55,7 @@
 
 	const PAGE_SIZE = 25;
 	const colFields = $derived(
-		def.fields.filter((f) => f.list || (def.searchFields ?? []).includes(f.key))
+		def.fields.filter((f) => (f.list || (def.searchFields ?? []).includes(f.key)) && !f.hidden)
 	);
 	/** Per-user hidden columns (writable derived); falls back to "first 6". */
 	let hiddenCols = $derived<string[]>(
@@ -71,6 +71,8 @@
 		writeHiddenCols(def.name, hiddenCols);
 	}
 	const filterFields = $derived(def.fields.filter((f) => f.filterable));
+	const userFilterField = $derived(filterFields.find((f) => f.type === 'user'));
+	const myId = $derived(page.data.user?.id as string | undefined);
 	const numericCols = $derived(columns.filter((f) => f.type === 'currency' || f.type === 'number'));
 	/** Page-sum for a currency/number column. */
 	const colSum = (rows: Record<string, unknown>[], f: EntityField) =>
@@ -467,6 +469,15 @@
 				{/if}
 			</NativeSelect.Root>
 		{/each}
+		{#if userFilterField && myId}
+			<Button
+				size="sm"
+				variant={filters[userFilterField.key] === myId ? 'default' : 'outline'}
+				onclick={() =>
+					setFilter(userFilterField.key, filters[userFilterField.key] === myId ? '' : myId)}
+				>Assigned to me</Button
+			>
+		{/if}
 		{#if def.archivable}
 			<label class="flex items-center gap-1.5 text-sm text-muted-foreground">
 				<Checkbox
