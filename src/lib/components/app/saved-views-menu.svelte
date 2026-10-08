@@ -4,10 +4,16 @@
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
-	import { deleteView, getSavedViews, saveViewAs } from '#lib/remote/views.remote.ts';
+	import {
+		deleteView,
+		getSavedViews,
+		saveViewAs,
+		setOrgDefault
+	} from '#lib/remote/views.remote.ts';
 	import Bookmark from '@lucide/svelte/icons/bookmark';
 	import Check from '@lucide/svelte/icons/check';
 	import Star from '@lucide/svelte/icons/star';
+	import Users from '@lucide/svelte/icons/users';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import X from '@lucide/svelte/icons/x';
 	import { readDefaultView, writeDefaultView } from '#lib/colprefs.ts';
@@ -61,6 +67,12 @@
 		} finally {
 			saving = false;
 		}
+	}
+
+	async function toggleOrgDefault(v: SavedView, e: Event) {
+		e.stopPropagation();
+		await setOrgDefault({ page: key, id: v.isOrgDefault ? null : v.id });
+		toast.success(v.isOrgDefault ? 'Team default cleared' : `"${v.name}" is now the team default`);
 	}
 
 	async function remove(v: SavedView, e: Event) {
@@ -117,6 +129,22 @@
 				<DropdownMenu.Item class="flex-col items-start gap-0.5" onclick={() => onapply(v.state)}>
 					<span class="flex w-full items-center gap-2">
 						<span class="truncate">{v.name}</span>
+						{#if v.isOrgDefault}
+							<span class="rounded bg-primary/10 px-1 text-[10px] text-primary">team</span>
+						{/if}
+						{#if isAdmin}
+							<button
+								class={cn(
+									'ml-auto shrink-0 rounded p-0.5 text-muted-foreground hover:text-primary',
+									v.isOrgDefault && 'text-primary'
+								)}
+								aria-label={v.isOrgDefault ? 'Unset team default' : 'Set as team default'}
+								title={v.isOrgDefault ? 'Team default' : 'Set as team default'}
+								onclick={(e) => toggleOrgDefault(v, e)}
+							>
+								<Users class="size-3.5" />
+							</button>
+						{/if}
 						<button
 							class={cn(
 								'ml-auto shrink-0 rounded p-0.5 text-muted-foreground hover:text-amber-500',
@@ -130,7 +158,7 @@
 						</button>
 						{#if canDelete(v)}
 							<button
-								class="ml-auto shrink-0 rounded p-0.5 text-muted-foreground hover:text-destructive"
+								class="shrink-0 rounded p-0.5 text-muted-foreground hover:text-destructive"
 								aria-label="Delete view {v.name}"
 								onclick={(e) => remove(v, e)}
 							>

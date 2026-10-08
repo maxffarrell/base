@@ -2,7 +2,12 @@ import { command, query } from '$app/server';
 import * as v from 'valibot';
 import { error } from '@sveltejs/kit';
 import { requireOrg } from '#lib/server/context.ts';
-import { deleteSavedView, listSavedViews, saveView } from '#lib/server/services/views.ts';
+import {
+	deleteSavedView,
+	listSavedViews,
+	saveView,
+	setOrgDefaultView
+} from '#lib/server/services/views.ts';
 
 const pageKey = v.pipe(v.string(), v.minLength(1), v.maxLength(40));
 const viewState = v.record(v.string(), v.unknown());
@@ -39,3 +44,13 @@ export const deleteView = command(v.pipe(v.string(), v.minLength(1)), async (id)
 	// Only the creator or an owner/admin may delete.
 	await deleteSavedView(orgId, id, { userId, admin: role !== 'member' });
 });
+
+export const setOrgDefault = command(
+	v.object({ page: pageKey, id: v.nullable(v.pipe(v.string(), v.minLength(1))) }),
+	async ({ page, id }) => {
+		const { orgId, role } = await requireOrg();
+		if (role === 'member') error(403, 'Only admins can set the team default view');
+		await setOrgDefaultView(orgId, page, id);
+		void getSavedViews(page).refresh();
+	}
+);

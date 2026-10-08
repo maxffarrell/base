@@ -180,6 +180,8 @@ export const savedView = pgTable(
 		name: text('name').notNull(),
 		state: jsonb('state').$type<Record<string, unknown>>().notNull(),
 		createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
+		/** Admin-chosen default view applied org-wide when a member has no personal default. */
+		isOrgDefault: boolean('is_org_default').notNull().default(false),
 		...timestamps
 	},
 	(t) => [

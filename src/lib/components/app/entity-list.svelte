@@ -289,11 +289,10 @@
 		if (!hasUrlFilters && !appliedDefault) {
 			appliedDefault = true;
 			const defaultId = readDefaultView(def.name);
-			if (defaultId)
-				void getSavedViews(def.name).then((vs) => {
-					const v = vs.find((x) => x.id === defaultId);
-					if (v) applyView(v.state);
-				});
+			void getSavedViews(def.name).then((vs) => {
+				const v = defaultId ? vs.find((x) => x.id === defaultId) : vs.find((x) => x.isOrgDefault);
+				if (v) applyView(v.state);
+			});
 		}
 		for (const f of def.fields) {
 			if (f.type === 'link' && f.linkTo && !linkTitles[f.key]) {
