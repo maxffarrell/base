@@ -199,7 +199,14 @@
 			<Modal.Title>Duplicate {def?.label ?? 'record'}</Modal.Title>
 		</Modal.Header>
 		{#if def && dupSeed}
-			<EntityForm {def} record={dupSeed} onsaved={(r) => goto(`/${def.name}/${r.id}`)} />
+			<EntityForm
+				{def}
+				record={dupSeed}
+				onsaved={(r) => {
+					showDup = false;
+					goto(`/${def.name}/${r.id}`);
+				}}
+			/>
 		{/if}
 	</Modal.Content>
 </Modal.Root>

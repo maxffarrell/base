@@ -35,6 +35,7 @@
 		importEntityRecords,
 		listEntityRecords
 	} from '#lib/remote/entities.remote.ts';
+	import { getMembers } from '#lib/remote/workspace.remote.ts';
 	import { recordTitle } from '#lib/entities.ts';
 	import { cn } from '#lib/utils.js';
 
@@ -55,6 +56,7 @@
 	let selected = $state<Set<string>>(new Set());
 	let showNew = $state(false);
 	let linkTitles = $state<Record<string, Record<string, string>>>({});
+	let userNames = $state<Record<string, string>>({});
 
 	// Board view: enabled when the entity has a select field to group by.
 	const groupField = $derived(
@@ -209,6 +211,11 @@
 				});
 			}
 		}
+		if (def.fields.some((f) => f.type === 'user') && !Object.keys(userNames).length) {
+			void getMembers().then((ms) => {
+				userNames = Object.fromEntries(ms.map((m) => [m.userId, m.name ?? m.email]));
+			});
+		}
 	});
 
 	const query = $derived(
@@ -245,6 +252,7 @@
 		if (f.type === 'date') return formatDate(v as string);
 		if (f.type === 'boolean') return v ? 'Yes' : 'No';
 		if (f.type === 'link') return linkTitles[f.key]?.[v as string] ?? '…';
+		if (f.type === 'user') return userNames[v as string] ?? '…';
 		return String(v);
 	}
 
@@ -323,6 +331,10 @@
 				{:else if f.type === 'link'}
 					{#each Object.entries(linkTitles[f.key] ?? {}) as [id, title] (id)}<NativeSelect.Option
 							value={id}>{title}</NativeSelect.Option
+						>{/each}
+				{:else if f.type === 'user'}
+					{#each Object.entries(userNames) as [id, name] (id)}<NativeSelect.Option value={id}
+							>{name}</NativeSelect.Option
 						>{/each}
 				{/if}
 			</NativeSelect.Root>
