@@ -12,7 +12,7 @@ export type ApiAction = (typeof API_ACTIONS)[number];
 
 export type ApiPermissions = Partial<Record<ApiResource, ApiAction[]>>;
 export type AccessLevel = 'none' | 'read' | 'write';
-type RawPermissions = Record<string, readonly string[] | undefined> | null | undefined;
+export type RawPermissions = Record<string, readonly string[] | undefined> | null | undefined;
 
 export const API_RESOURCE_LABELS: Record<string, string> = Object.fromEntries(
 	listEntityDefs().map((d) => [d.name, d.labelPlural ?? `${d.label}s`])

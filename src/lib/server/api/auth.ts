@@ -2,24 +2,22 @@ import { error, type RequestEvent } from '@sveltejs/kit';
 import { auth } from '#lib/server/auth.ts';
 import { db } from '#lib/server/db/index.ts';
 import type { OrgContext } from '#lib/server/context.ts';
-import { allows, type ApiAction } from '#lib/api-permissions.ts';
+import { allows, type ApiAction, type RawPermissions } from '#lib/api-permissions.ts';
 
 /**
- * Authenticates `Authorization: Bearer base_…` against organization-scoped API keys and checks the
- * key grants `action` on the route's resource. Keys without permissions are denied.
+ * Verifies `Authorization: Bearer base_…` (or `x-api-key`) and resolves the org context,
+ * without checking per-resource permissions. Use for cross-resource endpoints (e.g.
+ * metadata) that apply their own permission filtering via `allows(permissions, …)`.
  */
-export async function apiContext(event: RequestEvent, action: ApiAction): Promise<OrgContext> {
+export async function apiKeyContext(
+	event: RequestEvent
+): Promise<{ ctx: OrgContext; permissions: RawPermissions }> {
 	const header = event.request.headers.get('authorization') ?? '';
 	const key = header.match(/^Bearer\s+(.+)$/i)?.[1] ?? event.request.headers.get('x-api-key');
 	if (!key) error(401, 'Missing API key');
 
 	const result = await auth.api.verifyApiKey({ body: { key } });
 	if (!result.valid || !result.key) error(401, 'Invalid API key');
-
-	const resource = event.params.resource ?? '';
-	if (!allows(result.key.permissions, resource, action)) {
-		error(403, `API key lacks ${resource}:${action} permission`);
-	}
 
 	const orgId = result.key.referenceId;
 	const org = await db.query.organization.findFirst({ where: (o, { eq }) => eq(o.id, orgId) });
@@ -37,9 +35,27 @@ export async function apiContext(event: RequestEvent, action: ApiAction): Promis
 	if (!actor) error(401, 'Invalid API key');
 
 	return {
-		userId: actor.userId,
-		orgId,
-		role: 'admin',
-		org: { id: org.id, name: org.name, slug: org.slug, logo: org.logo ?? null }
+		ctx: {
+			userId: actor.userId,
+			orgId,
+			role: 'admin',
+			org: { id: org.id, name: org.name, slug: org.slug, logo: org.logo ?? null }
+		},
+		permissions: result.key.permissions
 	};
+}
+
+/**
+ * Authenticates `Authorization: Bearer base_…` against organization-scoped API keys and checks the
+ * key grants `action` on the route's resource. Keys without permissions are denied.
+ */
+export async function apiContext(event: RequestEvent, action: ApiAction): Promise<OrgContext> {
+	const { ctx, permissions } = await apiKeyContext(event);
+
+	const resource = event.params.resource ?? '';
+	if (!allows(permissions, resource, action)) {
+		error(403, `API key lacks ${resource}:${action} permission`);
+	}
+
+	return ctx;
 }
