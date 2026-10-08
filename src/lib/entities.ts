@@ -85,6 +85,9 @@ export type EntityDef = {
 	archivable?: boolean;
 	/** Only owner/admin members may create, update, archive, or delete records. */
 	adminOnly?: boolean;
+	/** Members cannot see this entity at all — hidden from nav/lists and
+	 * every remote fn returns 403 (REST/API-key access is governed by key perms). */
+	memberHidden?: boolean;
 	/** Custom component escape hatches (Frappe struggles to offer this cleanly). */
 	listComponent?: Component;
 	formComponent?: Component;

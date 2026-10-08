@@ -2,8 +2,9 @@ import '#lib/modules/index.ts';
 import '#lib/modules/server.ts';
 import { command, query } from '$app/server';
 import * as v from 'valibot';
+import { error } from '@sveltejs/kit';
 import { requireOrg } from '#lib/server/context.ts';
-import { listEntityDefs, recordTitle } from '#lib/entities.ts';
+import { getEntityDef, listEntityDefs, recordTitle } from '#lib/entities.ts';
 import {
 	bulkDelete,
 	createRecord,
@@ -19,22 +20,29 @@ import {
 const entityName = v.pipe(v.string(), v.minLength(1), v.maxLength(60));
 
 /** Serializable defs for the generic UI — component references stay client-side. */
+const assertVisible = (entity: string, role: string) => {
+	const d = getEntityDef(entity);
+	if (d?.memberHidden && role === 'member') error(403, `${d.label} is admin-only`);
+};
+
 export const getEntities = query(async () => {
-	await requireOrg();
-	return listEntityDefs().map((d) => ({
-		name: d.name,
-		label: d.label,
-		labelPlural: d.labelPlural ?? `${d.label}s`,
-		description: d.description,
-		fields: d.fields,
-		searchFields: d.searchFields,
-		titleField: d.titleField,
-		defaultSort: d.defaultSort,
-		archivable: d.archivable,
-		hasListComponent: !!d.listComponent,
-		hasFormComponent: !!d.formComponent,
-		hasViewComponent: !!d.viewComponent
-	}));
+	const { role } = await requireOrg();
+	return listEntityDefs()
+		.filter((d) => !(d.memberHidden && role === 'member'))
+		.map((d) => ({
+			name: d.name,
+			label: d.label,
+			labelPlural: d.labelPlural ?? `${d.label}s`,
+			description: d.description,
+			fields: d.fields,
+			searchFields: d.searchFields,
+			titleField: d.titleField,
+			defaultSort: d.defaultSort,
+			archivable: d.archivable,
+			hasListComponent: !!d.listComponent,
+			hasFormComponent: !!d.formComponent,
+			hasViewComponent: !!d.viewComponent
+		}));
 });
 
 export const listEntityRecords = query(
@@ -49,7 +57,8 @@ export const listEntityRecords = query(
 		archivedOnly: v.optional(v.boolean())
 	}),
 	async ({ entity, ...opts }) => {
-		const { orgId } = await requireOrg();
+		const { orgId, role } = await requireOrg();
+		assertVisible(entity, role);
 		return listRecords(orgId, entity, opts);
 	}
 );
@@ -62,7 +71,8 @@ export const getEntityReport = query(
 		sumField: v.optional(v.string())
 	}),
 	async ({ entity, groupBy, sumField }) => {
-		const { orgId } = await requireOrg();
+		const { orgId, role } = await requireOrg();
+		assertVisible(entity, role);
 		return entityReport(orgId, entity, groupBy, sumField);
 	}
 );
@@ -82,13 +92,15 @@ export const exportOrgData = query(async () => {
 export const getEntityRecord = query(
 	v.object({ entity: entityName, id: v.string() }),
 	async ({ entity, id }) => {
-		const { orgId } = await requireOrg();
+		const { orgId, role } = await requireOrg();
+		assertVisible(entity, role);
 		return getRecord(orgId, entity, id);
 	}
 );
 
 export const getLinkOptions = query(entityName, async (entity) => {
-	const { orgId } = await requireOrg();
+	const { orgId, role } = await requireOrg();
+	assertVisible(entity, role);
 	return linkOptions(orgId, entity);
 });
 
@@ -98,6 +110,7 @@ export const createEntityRecord = command(
 	v.object({ entity: entityName, input: recordInput }),
 	async ({ entity, input }) => {
 		const ctx = await requireOrg();
+		assertVisible(entity, ctx.role);
 		return createRecord(ctx, entity, input);
 	}
 );
@@ -106,6 +119,7 @@ export const updateEntityRecord = command(
 	v.object({ entity: entityName, id: v.string(), input: recordInput }),
 	async ({ entity, id, input }) => {
 		const ctx = await requireOrg();
+		assertVisible(entity, ctx.role);
 		return updateRecord(ctx, entity, id, input);
 	}
 );
@@ -114,6 +128,7 @@ export const setEntityArchived = command(
 	v.object({ entity: entityName, id: v.string(), archived: v.boolean() }),
 	async ({ entity, id, archived }) => {
 		const ctx = await requireOrg();
+		assertVisible(entity, ctx.role);
 		const row = await setArchived(ctx, entity, id, archived);
 		void listEntityRecords({ entity }).refresh();
 		return row;
@@ -124,6 +139,7 @@ export const deleteEntityRecord = command(
 	v.object({ entity: entityName, id: v.string() }),
 	async ({ entity, id }) => {
 		const ctx = await requireOrg();
+		assertVisible(entity, ctx.role);
 		await deleteRecord(ctx, entity, id);
 		void listEntityRecords({ entity }).refresh();
 	}
@@ -172,7 +188,8 @@ export const bulkUpdateRecords = command(
 export const getRecordActivity = query(
 	v.object({ entity: entityName, id: v.string() }),
 	async ({ entity, id }) => {
-		const { orgId } = await requireOrg();
+		const { orgId, role } = await requireOrg();
+		assertVisible(entity, role);
 		const { listAudit } = await import('#lib/server/services/audit.ts');
 		return listAudit(orgId, { entityType: entity, entityId: id, limit: 50 });
 	}
@@ -185,6 +202,7 @@ export const importEntityRecords = command(
 	}),
 	async ({ entity, rows }) => {
 		const ctx = await requireOrg('admin');
+		assertVisible(entity, ctx.role);
 		const results: { row: number; id?: string; error?: string }[] = [];
 		for (const [i, input] of rows.entries()) {
 			try {
@@ -212,11 +230,13 @@ export const importEntityRecords = command(
 export const getRelatedRecords = query(
 	v.object({ entity: entityName, id: v.string() }),
 	async ({ entity, id }) => {
-		const { orgId } = await requireOrg();
+		const { orgId, role } = await requireOrg();
+		assertVisible(entity, role);
 		const { listEntities } = await import('#lib/server/entities/registry.ts');
 		const sections = [];
 		for (const reg of listEntities()) {
 			if (reg.def.name === entity) continue;
+			if (reg.def.memberHidden && role === 'member') continue;
 			for (const f of reg.def.fields) {
 				if (f.type !== 'link' || f.linkTo !== entity) continue;
 				const { rows, count } = await listRecords(orgId, reg.def.name, {

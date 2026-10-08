@@ -84,6 +84,7 @@ defineEntity({
 defineEntity({
 	name: 'stock_movement',
 	adminOnly: true,
+	memberHidden: true,
 	label: 'Stock movement',
 	labelPlural: 'Stock movements',
 	description: 'Every in/out adjustment on a stock item',
