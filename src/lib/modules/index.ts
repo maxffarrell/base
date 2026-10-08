@@ -5,3 +5,4 @@
 import './directory/def.ts';
 import './projects/def.ts';
 import './billing/def.ts';
+import './inventory/def.ts';
