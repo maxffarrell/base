@@ -81,7 +81,8 @@ export const GET: RequestHandler = ({ url }) => {
 	paths['/meta/options'] = {
 		get: {
 			summary: 'Link field options',
-			description: '`?entity=<name>` → `{ id, title }[]` for link pickers; requires `<entity>:read`.',
+			description:
+				'`?entity=<name>` → `{ id, title }[]` for link pickers; requires `<entity>:read`.',
 			responses: { 200: { description: 'OK' }, 403: { description: 'Forbidden' } }
 		}
 	};
