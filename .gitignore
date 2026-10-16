@@ -27,3 +27,6 @@ vite.config.ts.timestamp-*
 # Local Drizzle scratch files; migration SQL and metadata stay tracked.
 drizzle/*.local.sql
 drizzle/.scratch/
+
+# Python release-test bytecode
+__pycache__/

@@ -4,6 +4,7 @@ import { toManifest } from '@base/integration-sdk';
 import { integrations } from '../../../../integrations/index.ts';
 import { db } from '#lib/server/db/index.ts';
 import { integrationInstall, organization } from '#lib/server/db/schema.ts';
+import { outboundFetch } from '#lib/server/outbound-http.ts';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- each integration has its own config shape
 const byId = new Map<string, IntegrationDefinition<any>>(integrations.map((i) => [i.id, i]));
@@ -16,12 +17,16 @@ export function getIntegration(id: string) {
 	return byId.get(id);
 }
 
-export const boundedFetch: typeof fetch = (input, init) =>
-	fetch(input, {
+export const boundedFetch: typeof fetch = (input, init) => {
+	const headers = new Headers(
+		init?.headers ?? (input instanceof Request ? input.headers : undefined)
+	);
+	if (!headers.has('user-agent')) headers.set('user-agent', 'Base-Integrations/1.0');
+	return outboundFetch(input, {
 		...init,
-		headers: { 'user-agent': 'Base-Integrations/1.0', ...(init?.headers ?? {}) },
-		signal: init?.signal ?? AbortSignal.timeout(10_000)
+		headers
 	});
+};
 
 export async function dispatchToIntegrations(event: BaseEvent<string>) {
 	const installs = await db

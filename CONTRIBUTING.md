@@ -4,7 +4,7 @@ Use Node 26 and pnpm. Follow `AGENTS.md`, start from a feature branch and includ
 
 Report vulnerabilities privately as described in [`SECURITY.md`](SECURITY.md). Never include credentials, customer data or exploit details in public issues.
 
-Copy `.env.example` to `.env` for local setup; never commit real credentials or local env files. Tests must use obvious dummy values (for example `whsec_test_not_real`) or generated disposable keys, never live-looking provider credentials. Keep committed migration SQL/history; put local Drizzle scratch work in `drizzle/.scratch/` or `drizzle/*.local.sql`.
+Never commit real credentials or local `.env` files. Keep [`.env.example`](.env.example) placeholder-only; use obviously fake test fixtures and disposable local/CI credentials. Report vulnerabilities privately using [`SECURITY.md`](SECURITY.md), not public issues. Keep committed migration SQL/history; put local Drizzle scratch work in `drizzle/.scratch/` or `drizzle/*.local.sql`.
 
 ## Development
 

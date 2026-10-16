@@ -35,4 +35,7 @@ if (release && git('tag', '--list', `v${version}`)) {
 	if (git('rev-parse', `refs/tags/v${version}^{commit}`) !== commit)
 		throw new Error('Version already released from a different commit');
 }
-appendFileSync(process.env.GITHUB_OUTPUT, `release=${release}\nversion=${version}\ncommit=${commit}\n`);
+appendFileSync(
+	process.env.GITHUB_OUTPUT,
+	`release=${release}\nversion=${version}\ncommit=${commit}\n`
+);
