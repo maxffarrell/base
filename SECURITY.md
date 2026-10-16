@@ -12,6 +12,8 @@ Include the affected revision, installation mode, prerequisites, a minimal repro
 
 Use HTTPS, persistent authentication secrets, restricted database access and tested backups. Keep dependencies and releases current. Enable demo mode only on a separate disposable installation. Configure your own identity, email and model providers.
 
+Existing Compose database volumes keep their stored PostgreSQL password: changing `POSTGRES_PASSWORD` does not alter the database role. For upgrades, configure the current password; rotate the role and application secret together through an authenticated database connection. Never delete a data volume to resolve a password mismatch. If an installation used a published example/default password, treat it as exposed and rotate it.
+
 Tenant-configured webhooks and integrations accept public HTTP(S) destinations without redirects. For a trusted private integration, an installation operator may set `OUTBOUND_PRIVATE_ORIGINS` to comma-separated exact origins (scheme, host and port). This grants those tenants access to the allowlisted endpoint; keep the list narrow. Local operator-configured BYOK endpoints retain their own configuration.
 
 Forwarded client IPs are accepted only from exact socket peer IPs configured in `TRUSTED_PROXY_IPS`. Configure a trusted reverse proxy to replace client-supplied forwarding headers; leave the variable unset for direct access. Managed serverless adapters rely on their provider's trusted ingress.
