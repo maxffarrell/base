@@ -5,3 +5,7 @@ build
 .env.*
 !.env.example
 .git
+data
+coverage
+*.log
+__pycache__

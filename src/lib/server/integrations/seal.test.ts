@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { seal, signState, unseal, verifyState } from './seal.ts';
 
-const secret = 'test-secret-that-is-long-enough-123456';
+const secret = 'test_only_not_real_sealing_secret_123456';
 
 describe('token sealing', () => {
 	it('round-trips and uses a fresh IV each time', () => {
@@ -13,7 +13,7 @@ describe('token sealing', () => {
 	});
 	it('rejects a different secret or tampering', () => {
 		const sealed = seal(secret, 'refresh-token');
-		expect(() => unseal('another-secret-entirely-000000000', sealed)).toThrow();
+		expect(() => unseal('test_only_wrong_sealing_secret_000000', sealed)).toThrow();
 		const [v, iv, tag, ct] = sealed.split('.');
 		const flipped = ct!.slice(0, -2) + (ct!.endsWith('AA') ? 'AB' : 'AA');
 		expect(() => unseal(secret, [v, iv, tag, flipped].join('.'))).toThrow();
@@ -37,7 +37,7 @@ describe('oauth state', () => {
 			payload!,
 			`${forged}.${sig}`,
 			`${token}.x`,
-			signState('another-secret-entirely-000000000', state)
+			signState('test_only_wrong_sealing_secret_000000', state)
 		])
 			expect(verifyState(secret, bad)).toBeNull();
 	});

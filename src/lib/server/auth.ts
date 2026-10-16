@@ -19,7 +19,7 @@ export const auth = betterAuth({
 	emailAndPassword: { enabled: true },
 	socialProviders: socialProviders(),
 	session: { cookieCache: { enabled: true, maxAge: 60 } },
-	// Deploy targets (Railway, Vercel, Docker via scripts/server.ts) all provide x-forwarded-for.
+	// Node entry point strips untrusted forwarding headers; serverless uses provider ingress.
 	advanced: { ipAddress: { ipAddressHeaders: ['x-forwarded-for'] } },
 	plugins: [
 		organization({

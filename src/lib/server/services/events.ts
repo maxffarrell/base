@@ -1,4 +1,5 @@
 import { createHmac } from 'node:crypto';
+import { outboundFetch } from '#lib/server/outbound-http.ts';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '#lib/server/db/index.ts';
 import { activity, recordWatch, webhook, webhookDelivery } from '#lib/server/db/schema.ts';
@@ -153,7 +154,7 @@ export async function deliverToHook(
 	let status = 0;
 	let error: string | null = null;
 	try {
-		const res = await fetch(h.url, {
+		const res = await outboundFetch(h.url, {
 			method: 'POST',
 			headers: {
 				'content-type': 'application/json',

@@ -1,5 +1,11 @@
 # Contributing
 
+Use Node 26 and pnpm. Follow [`AGENTS.md`](AGENTS.md), start from a feature branch and include regression tests for behavior changes. The application core is AGPL-3.0 open-core; preserve the file/directory license overrides described in [`LICENSE`](LICENSE).
+
+Report vulnerabilities privately as described in [`SECURITY.md`](SECURITY.md). Never include credentials, customer data or exploit details in public issues.
+
+Never commit real credentials or local `.env` files. Keep [`.env.example`](.env.example) placeholder-only; use obviously fake test fixtures and disposable local/CI credentials. Report vulnerabilities privately using [`SECURITY.md`](SECURITY.md), not public issues. Keep committed migration SQL/history; put local Drizzle scratch work in `drizzle/.scratch/` or `drizzle/*.local.sql`.
+
 ## Development
 
 ```sh
@@ -9,7 +15,7 @@ pnpm db:migrate
 pnpm dev
 ```
 
-Before opening a PR run `pnpm check`, `pnpm lint` and `pnpm test`.
+Before submitting a PR run `pnpm check`, `pnpm lint`, `pnpm test`, `pnpm build` and `pnpm release:test`. Database tests require a disposable migrated PostgreSQL database. Add a changeset with `pnpm changeset` for user-facing changes.
 
 ## Conventions
 

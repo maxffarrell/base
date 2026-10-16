@@ -49,7 +49,7 @@ pnpm check && pnpm lint && pnpm test && pnpm build
 
 | Target       | How                                                                                                            |
 | ------------ | -------------------------------------------------------------------------------------------------------------- |
-| Docker       | `BETTER_AUTH_SECRET=$(openssl rand -hex 32) docker compose up -d`                                              |
+| Docker       | Set persistent `POSTGRES_PASSWORD` and `BETTER_AUTH_SECRET` in `.env`, then `docker compose up -d`.            |
 | Railway      | Button above. Uses `railway.json` + `Dockerfile` with a Postgres plugin.                                       |
 | Vercel       | Button above. Uses `@sveltejs/adapter-vercel` automatically when `VERCEL=1`. Migrations run during the build.  |
 | Render       | Button above. `render.yaml` provisions a Docker web service and a Postgres database.                           |
@@ -68,4 +68,14 @@ SvelteKit 3 · Svelte 5 (async + remote functions) · Tailwind 4 · shadcn-svelt
 
 ## License
 
-MIT for the framework. Integrations in [`integrations/`](integrations) and the SDK in [`packages/integration-sdk`](packages/integration-sdk) are MIT as well.
+Base is open core: the core is licensed under AGPL-3.0 ([`LICENSE-AGPL.txt`](LICENSE-AGPL.txt)), with separately licensed enterprise features. Copy [`.env.example`](.env.example) to `.env` for self-hosted setup. Report vulnerabilities privately through [`SECURITY.md`](SECURITY.md).
+
+See [`LICENSE`](LICENSE) and file/directory license overrides. Integrations in [`integrations/`](integrations) and the SDK in [`packages/integration-sdk`](packages/integration-sdk) are MIT.
+
+Self-host using [`.env.example`](.env.example): copy it to `.env`, configure your own database and persistent random authentication secret, then follow the setup above. Never commit real credentials or enable demo mode on a production installation.
+
+Report vulnerabilities privately as described in [`SECURITY.md`](SECURITY.md).
+
+## Releases
+
+Add a changeset with `pnpm changeset` for user-facing changes. CI validates every PR. On main, Changesets opens a version PR; merging it publishes a versioned container and GitHub release. Deployment is disabled by default: an operator must configure the protected `deployment` environment, `BASE_DEPLOY_ENABLED=true` repository variable and `DEPLOY_HOOK_URL` environment secret, then explicitly dispatch the release workflow with a release tag and `deploy=true`. No host or credentials are bundled.

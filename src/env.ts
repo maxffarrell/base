@@ -15,6 +15,10 @@ export const variables = defineEnvVars({
 			'Enterprise license key. Unlocks SAML/OIDC SSO and passkeys on self-hosted installs.',
 		schema: (value) => value || undefined
 	},
+	OUTBOUND_PRIVATE_ORIGINS: {
+		description: 'Exact operator-approved origins allowed to reach private integration networks.',
+		schema: (value) => value || undefined
+	},
 	BASE_CLOUD: {
 		description: 'Set to `true` on hosted cloud installs. Enables enterprise features.',
 		schema: (value) => value === 'true'
