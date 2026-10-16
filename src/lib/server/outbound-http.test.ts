@@ -13,6 +13,11 @@ const state = vi.hoisted(() => ({
 vi.mock('node:dns/promises', () => ({ lookup: state.lookup }));
 vi.mock('node:http', () => ({ request: state.request }));
 vi.mock('node:https', () => ({ request: state.request }));
+vi.mock('$app/env/private', () => ({
+	get OUTBOUND_PRIVATE_ORIGINS() {
+		return process.env.OUTBOUND_PRIVATE_ORIGINS;
+	}
+}));
 import { isPublicAddress, outboundFetch } from './outbound-http.ts';
 
 beforeEach(() => {

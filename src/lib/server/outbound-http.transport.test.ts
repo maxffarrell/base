@@ -4,6 +4,12 @@ import type { AddressInfo } from 'node:net';
 import { afterEach, expect, it, vi } from 'vitest';
 import { outboundFetch } from './outbound-http.ts';
 
+vi.mock('$app/env/private', () => ({
+	get OUTBOUND_PRIVATE_ORIGINS() {
+		return process.env.OUTBOUND_PRIVATE_ORIGINS;
+	}
+}));
+
 afterEach(() => vi.unstubAllEnvs());
 
 it('reaches only an operator-approved loopback service and preserves POST bytes', async () => {

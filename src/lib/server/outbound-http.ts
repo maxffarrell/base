@@ -2,6 +2,7 @@ import { lookup } from 'node:dns/promises';
 import { request as httpRequest } from 'node:http';
 import { request as httpsRequest } from 'node:https';
 import { isIP } from 'node:net';
+import { OUTBOUND_PRIVATE_ORIGINS } from '$app/env/private';
 import { gunzipSync, inflateSync, brotliDecompressSync } from 'node:zlib';
 
 const LIMIT = 16 * 1024 * 1024;
@@ -59,7 +60,7 @@ export const outboundFetch: typeof fetch = async (input, init = {}) => {
 		...(init.signal ? [init.signal] : source ? [source.signal] : [])
 	]);
 	signal.throwIfAborted();
-	const allowPrivate = (process.env.OUTBOUND_PRIVATE_ORIGINS ?? '').split(',').some((entry) => {
+	const allowPrivate = (OUTBOUND_PRIVATE_ORIGINS ?? '').split(',').some((entry) => {
 		try {
 			const allowed = new URL(entry.trim());
 			return (
