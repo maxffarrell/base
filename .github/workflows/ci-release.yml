@@ -1,0 +1,175 @@
+name: CI and release
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_ref:
+        description: Existing release tag (for example v0.0.2)
+        required: true
+        type: string
+      deploy:
+        description: Explicitly trigger the operator-configured deployment hook
+        default: false
+        type: boolean
+permissions:
+  contents: read
+concurrency:
+  group: ci-release-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: false
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      release: ${{ steps.plan.outputs.release }}
+      version: ${{ steps.plan.outputs.version }}
+      commit: ${{ steps.plan.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.release_ref || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '26'
+      - id: plan
+        run: node scripts/release/plan.mjs
+  validate:
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: public.ecr.aws/docker/library/postgres:18-alpine
+        # Isolated ephemeral CI database, never deployment credentials.
+        env:
+          POSTGRES_USER: base_test
+          POSTGRES_PASSWORD: runner-test-only
+          POSTGRES_DB: base_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U base_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.plan.outputs.commit }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '26'
+      - run: npm install -g pnpm@12.4.1
+      - name: Validate application and release safeguards
+        # Test-only auth secret and database; no production secrets in PR jobs.
+        env:
+          DATABASE_URL: postgres://base_test:runner-test-only@localhost:5432/base_test
+          BETTER_AUTH_SECRET: ci-test-only-not-real-32-characters-long
+          BASE_DEMO: ''
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm check
+          pnpm lint
+          node scripts/migrate.ts
+          pnpm test
+          pnpm release:test
+          pnpm build
+      - uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker
+      - name: Validate container build (no publish)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+  version:
+    needs: [plan, validate]
+    if: github.event_name == 'push' && needs.plan.outputs.release != 'true'
+    concurrency:
+      group: changesets-version-${{ github.repository }}
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '26'
+      - run: npm install -g pnpm@12.4.1
+      - run: pnpm install --frozen-lockfile
+      - uses: changesets/action@v1
+        with:
+          version: pnpm release:version
+          title: Version packages
+          commit: Version packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  release:
+    needs: [plan, validate]
+    if: needs.plan.outputs.release == 'true' && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      packages: write
+    outputs:
+      digest: ${{ steps.image.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.plan.outputs.commit }}
+      - name: Reserve immutable release tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ needs.plan.outputs.version }}
+          SOURCE_COMMIT: ${{ needs.plan.outputs.commit }}
+        run: |
+          if ! gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$RELEASE_VERSION" >/dev/null 2>&1; then
+            gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/v$RELEASE_VERSION" -f sha="$SOURCE_COMMIT" >/dev/null
+          fi
+      - uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        id: image
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:v${{ needs.plan.outputs.version }}
+            ghcr.io/${{ github.repository }}:sha-${{ needs.plan.outputs.commit }}
+            ghcr.io/${{ github.repository }}:latest
+      - name: Record successful release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ needs.plan.outputs.version }}
+        run: |
+          if ! gh release view "v$RELEASE_VERSION" >/dev/null 2>&1; then
+            gh release create "v$RELEASE_VERSION" --verify-tag --title "v$RELEASE_VERSION" --generate-notes
+          fi
+  deploy:
+    needs: [plan, release]
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy && vars.BASE_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    environment: deployment
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.plan.outputs.commit }}
+      - name: Trigger operator-configured deployment
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
+          IMAGE_DIGEST: ${{ needs.release.outputs.digest }}
+          RELEASE_VERSION: ${{ needs.plan.outputs.version }}
+          IMAGE_REPOSITORY: ghcr.io/${{ github.repository }}
+        run: python3 scripts/release/deploy.py

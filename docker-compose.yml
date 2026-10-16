@@ -1,11 +1,11 @@
-# Self-host Base with Postgres: `BETTER_AUTH_SECRET=$(openssl rand -hex 32) docker compose up -d`
+# Set persistent BETTER_AUTH_SECRET and POSTGRES_PASSWORD before starting.
 services:
   app:
     image: ghcr.io/maxffarrell/base:latest
     build: .
     ports: ['3000:3000']
     environment:
-      DATABASE_URL: postgres://base:base@db:5432/base
+      DATABASE_URL: postgres://base:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD (URL-encode special characters)}@db:5432/base
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET}
       ORIGIN: ${ORIGIN:-http://localhost:3000}
       BASE_ENTERPRISE_KEY: ${BASE_ENTERPRISE_KEY:-}
@@ -16,7 +16,7 @@ services:
     image: postgres:18-alpine
     environment:
       POSTGRES_USER: base
-      POSTGRES_PASSWORD: base
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
       POSTGRES_DB: base
     volumes: ['pgdata:/var/lib/postgresql']
     healthcheck:

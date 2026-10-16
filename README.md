@@ -68,4 +68,12 @@ SvelteKit 3 · Svelte 5 (async + remote functions) · Tailwind 4 · shadcn-svelt
 
 ## License
 
-MIT for the framework. Integrations in [`integrations/`](integrations) and the SDK in [`packages/integration-sdk`](packages/integration-sdk) are MIT as well.
+Base is AGPL-3.0 open-core software. See [`LICENSE-AGPL.txt`](LICENSE-AGPL.txt), [`LICENSE`](LICENSE) and file/directory license overrides. Integrations in [`integrations/`](integrations) and the SDK in [`packages/integration-sdk`](packages/integration-sdk) are MIT; enterprise code has a separate license.
+
+Self-host using [`.env.example`](.env.example): copy it to `.env`, configure your own database and persistent random authentication secret, then follow the setup above. Never commit real credentials or enable demo mode on a production installation.
+
+Report vulnerabilities privately as described in [`SECURITY.md`](SECURITY.md).
+
+## Releases
+
+Add a changeset with `pnpm changeset` for user-facing changes. CI validates every PR. On main, Changesets opens a version PR; merging it publishes a versioned container and GitHub release. Deployment is disabled by default: an operator must configure the protected `deployment` environment, `BASE_DEPLOY_ENABLED=true` repository variable and `DEPLOY_HOOK_URL` environment secret, then explicitly dispatch the release workflow with a release tag and `deploy=true`. No host or credentials are bundled.
