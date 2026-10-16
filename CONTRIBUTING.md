@@ -1,6 +1,6 @@
 # Contributing
 
-Use Node 26 and pnpm. Follow `AGENTS.md`, start from a feature branch and include regression tests for behavior changes. The application core is AGPL-3.0 open-core; preserve the file/directory license overrides described in `LICENSE`.
+Use Node 26 and pnpm. Follow [`AGENTS.md`](AGENTS.md), start from a feature branch and include regression tests for behavior changes. The application core is AGPL-3.0 open-core; preserve the file/directory license overrides described in [`LICENSE`](LICENSE).
 
 Report vulnerabilities privately as described in [`SECURITY.md`](SECURITY.md). Never include credentials, customer data or exploit details in public issues.
 

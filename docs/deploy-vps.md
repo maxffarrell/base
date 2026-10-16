@@ -12,7 +12,11 @@ Any Linux VM that can run Docker Compose works — a ~€4/month Hetzner CX22, O
 3. Start it:
 
    ```sh
-   BETTER_AUTH_SECRET=$(openssl rand -hex 32) ORIGIN=https://your-domain.example docker compose up -d
+   cp .env.example .env
+   # Set POSTGRES_PASSWORD and BETTER_AUTH_SECRET to separate persistent random values
+   # (generate each with openssl rand -hex 32), and ORIGIN=https://your-domain.example.
+   # Keep .env private and reuse these values for upgrades; do not regenerate on restart.
+   docker compose up -d
    ```
 
    The `app` service runs migrations on start and listens on port 3000.

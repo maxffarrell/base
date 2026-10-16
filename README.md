@@ -49,7 +49,7 @@ pnpm check && pnpm lint && pnpm test && pnpm build
 
 | Target       | How                                                                                                            |
 | ------------ | -------------------------------------------------------------------------------------------------------------- |
-| Docker       | `BETTER_AUTH_SECRET=$(openssl rand -hex 32) docker compose up -d`                                              |
+| Docker       | Set persistent `POSTGRES_PASSWORD` and `BETTER_AUTH_SECRET` in `.env`, then `docker compose up -d`.            |
 | Railway      | Button above. Uses `railway.json` + `Dockerfile` with a Postgres plugin.                                       |
 | Vercel       | Button above. Uses `@sveltejs/adapter-vercel` automatically when `VERCEL=1`. Migrations run during the build.  |
 | Render       | Button above. `render.yaml` provisions a Docker web service and a Postgres database.                           |
