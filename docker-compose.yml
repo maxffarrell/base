@@ -9,6 +9,8 @@ services:
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET}
       ORIGIN: ${ORIGIN:-http://localhost:3000}
       BASE_ENTERPRISE_KEY: ${BASE_ENTERPRISE_KEY:-}
+      OUTBOUND_PRIVATE_ORIGINS: ${OUTBOUND_PRIVATE_ORIGINS:-}
+      TRUSTED_PROXY_IPS: ${TRUSTED_PROXY_IPS:-}
     depends_on:
       db: { condition: service_healthy }
     restart: unless-stopped

@@ -35,6 +35,7 @@
 	import { confirmDelete } from '#lib/components/ui/confirm-delete-dialog/index.js';
 	import type { EntityDef, EntityField } from '#lib/entities.ts';
 	import { formatDate, formatMoney } from '#lib/format.ts';
+	import { toCsv } from '#lib/csv.ts';
 	import {
 		bulkDeleteRecords,
 		bulkUpdateRecords,
@@ -211,11 +212,6 @@
 	// CSV export: same search/filters/sort as the table, up to 5000 rows.
 	let exporting = $state(false);
 
-	const csvCell = (v: unknown) => {
-		const s = v == null ? '' : String(v);
-		return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-	};
-
 	async function exportCsv() {
 		exporting = true;
 		try {
@@ -228,17 +224,18 @@
 				limit: 5000
 			});
 			const headers = def.fields.map((f) => f.key);
-			const csv = [
-				headers.join(','),
+			const csv = toCsv([
+				headers,
 				...rows.map((r) =>
-					headers
-						.map((h) => {
-							const f = def.fields.find((x) => x.key === h)!;
-							return csvCell(f.type === 'boolean' ? (r[h] ? 'true' : 'false') : r[h]);
-						})
-						.join(',')
+					headers.map((h) => {
+						const f = def.fields.find((x) => x.key === h)!;
+						const value = r[h];
+						if (value == null) return '';
+						if (f.type === 'boolean') return value ? 'true' : 'false';
+						return typeof value === 'number' ? value : String(value);
+					})
 				)
-			].join('\n');
+			]);
 			const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
 			const a = document.createElement('a');
 			a.href = url;

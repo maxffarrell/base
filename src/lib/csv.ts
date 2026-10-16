@@ -54,13 +54,13 @@ export function parseCsv(input: string): string[][] {
 }
 
 /** Spreadsheet apps run cells starting with these as formulas. */
-const FORMULA = /^[=+\-@\t\r]/;
+const FORMULA = /^(?:[=+\-@\t\r\n]|\s+[=+\-@])/;
 
 function cell(value: CsvValue) {
 	if (value == null) return '';
 	if (typeof value === 'number') return String(value);
 	const safe = FORMULA.test(value) ? `'${value}` : value;
-	return /[",\r\n]/.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe;
+	return /[",\t\r\n]/.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe;
 }
 
 export function toCsv(rows: CsvValue[][]) {

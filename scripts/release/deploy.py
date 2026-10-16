@@ -1,4 +1,5 @@
 """Opt-in deployment hook. The protected environment owns the destination."""
+import http.client
 import json
 import os
 import re
@@ -31,7 +32,7 @@ def main():
         with urllib.request.build_opener(NoRedirect).open(request, timeout=30) as response:
             if not 200 <= response.status < 300:
                 raise ValueError("Deployment hook failed")
-    except (ValueError, KeyError, urllib.error.URLError):
+    except (ValueError, KeyError, OSError, http.client.HTTPException, urllib.error.URLError):
         # Hook URLs may contain credentials; never print exception strings or response bodies.
         raise SystemExit("Deployment hook failed; verify protected environment configuration") from None
 
