@@ -42,7 +42,7 @@ jobs:
     timeout-minutes: 30
     services:
       postgres:
-        image: public.ecr.aws/docker/library/postgres:18-alpine
+        image: postgres:18-alpine
         # Isolated ephemeral CI database, never deployment credentials.
         env:
           POSTGRES_USER: base_test
