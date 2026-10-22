@@ -64,7 +64,7 @@ export async function complete(messages: AiMessage[], maxTokens = 1024): Promise
 					headers: {
 						'content-type': 'application/json',
 						'x-api-key': AI_API_KEY!,
-						'anthropic-version': '2023-06-01'
+						'anthropic-version': '2026-10-21'
 					},
 					body: JSON.stringify({
 						model,
