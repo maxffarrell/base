@@ -114,6 +114,7 @@ class WorkspaceVersionTest(unittest.TestCase):
                 if pending.name != "README.md":
                     pending.unlink()
             shutil.copytree(source / "scripts/release", root / "scripts/release", ignore=shutil.ignore_patterns("__pycache__"))
+            shutil.copy(source / "scripts/check-node.mjs", root / "scripts/check-node.mjs")
             sdk_path = Path("packages/integration-sdk/package.json")
             sdk_before = (root / sdk_path).read_bytes()
             version_before = json.loads((root / "package.json").read_text())["version"]

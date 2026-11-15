@@ -22,7 +22,8 @@
 		"start": "node scripts/migrate.ts && PROTOCOL_HEADER=x-forwarded-proto node scripts/server.ts",
 		"changeset": "pnpm dlx @changesets/cli@2.31.1",
 		"release:version": "pnpm changeset version && pnpm install --ignore-scripts && pnpm exec prettier --write package.json pnpm-lock.yaml CHANGELOG.md .changeset",
-		"release:test": "python3 scripts/release/test_release.py"
+		"release:test": "python3 scripts/release/test_release.py",
+		"preinstall": "node scripts/check-node.mjs"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
@@ -87,5 +88,8 @@
 		"svelte-tel-input": "^4.3.3",
 		"svelte-toolbelt": "^0.10.6",
 		"valibot": "^1.5.0"
+	},
+	"engines": {
+		"node": "^24.22.1 || ^26.12.1"
 	}
 }

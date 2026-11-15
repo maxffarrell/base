@@ -33,7 +33,7 @@ jobs:
           ref: ${{ github.event.inputs.release_ref || github.sha }}
       - uses: actions/setup-node@v4
         with:
-          node-version: '26'
+          node-version: '26.12.1'
       - id: plan
         run: node scripts/release/plan.mjs
   validate:
@@ -42,7 +42,7 @@ jobs:
     timeout-minutes: 30
     services:
       postgres:
-        image: public.ecr.aws/docker/library/postgres:18-alpine
+        image: postgres:18-alpine
         # Isolated ephemeral CI database, never deployment credentials.
         env:
           POSTGRES_USER: base_test
@@ -60,7 +60,7 @@ jobs:
           ref: ${{ needs.plan.outputs.commit }}
       - uses: actions/setup-node@v4
         with:
-          node-version: '26'
+          node-version: '26.12.1'
       - run: npm install -g pnpm@12.4.1
       - name: Validate application and release safeguards
         # Test-only auth secret and database; no production secrets in PR jobs.
@@ -100,7 +100,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: '26'
+          node-version: '26.12.1'
       - run: npm install -g pnpm@12.4.1
       - run: pnpm install --frozen-lockfile
       - uses: changesets/action@v1
