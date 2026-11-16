@@ -1,0 +1,48 @@
+# Hostinger VPS deployment candidate. See docs/deploy-hostinger.md for validation status.
+# Set POSTGRES_PASSWORD, BETTER_AUTH_SECRET and APP_DOMAIN in the project environment.
+services:
+  proxy:
+    image: caddy:2-alpine
+    command:
+      [
+        'caddy',
+        'reverse-proxy',
+        '--from',
+        '${APP_DOMAIN:?set the public DNS hostname}',
+        '--to',
+        'app:3000'
+      ]
+    ports: ['80:80', '443:443']
+    volumes: ['caddy_data:/data', 'caddy_config:/config']
+    depends_on: [app]
+    restart: unless-stopped
+  app:
+    # A raw Compose download has no local checkout. Build this reviewed revision.
+    build: https://github.com/maxffarrell/base.git#0a14fce889d71685d79bd97740b49935ec38aa0f
+    pull_policy: build
+    environment:
+      DATABASE_URL: postgres://base:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD (URL-encode special characters)}@db:5432/base
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET}
+      ORIGIN: https://${APP_DOMAIN:?set the public DNS hostname}
+      BASE_ENTERPRISE_KEY: ${BASE_ENTERPRISE_KEY:-}
+      OUTBOUND_PRIVATE_ORIGINS: ${OUTBOUND_PRIVATE_ORIGINS:-}
+      TRUSTED_PROXY_IPS: ${TRUSTED_PROXY_IPS:-}
+    depends_on:
+      db: { condition: service_healthy }
+    restart: unless-stopped
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: base
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: base
+    volumes: ['pgdata:/var/lib/postgresql']
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U base']
+      interval: 5s
+      retries: 10
+    restart: unless-stopped
+volumes:
+  caddy_data:
+  caddy_config:
+  pgdata:
