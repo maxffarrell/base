@@ -76,7 +76,7 @@
 		"@better-auth/passkey": "^1.7.7",
 		"@better-auth/sso": "^1.7.7",
 		"@base/integration-sdk": "workspace:*",
-		"@sveltejs/adapter-vercel": "^7.0.0",
+		"@sveltejs/adapter-vercel": "^7.0.2",
 		"better-auth": "^1.7.7",
 		"country-flag-icons": "^1.6.20",
 		"drizzle-orm": "^0.45.3",
