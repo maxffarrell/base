@@ -64,12 +64,16 @@ export async function complete(messages: AiMessage[], maxTokens = 1024): Promise
 					headers: {
 						'content-type': 'application/json',
 						'x-api-key': AI_API_KEY!,
-						'anthropic-version': '2023-06-01'
+						'anthropic-version': '2026-10-21'
 					},
 					body: JSON.stringify({
 						model,
 						max_tokens: maxTokens,
-						system: messages.find((m) => m.role === 'system')?.content,
+						system:
+							messages
+								.filter((m) => m.role === 'system')
+								.map((m) => m.content)
+								.join('\n\n') || undefined,
 						messages: messages.filter((m) => m.role !== 'system')
 					})
 				})
