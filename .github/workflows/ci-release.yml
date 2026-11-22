@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   plan:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       release: ${{ steps.plan.outputs.release }}
       version: ${{ steps.plan.outputs.version }}
@@ -38,7 +38,7 @@ jobs:
         run: node scripts/release/plan.mjs
   validate:
     needs: plan
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 30
     services:
       postgres:
@@ -90,7 +90,7 @@ jobs:
     concurrency:
       group: changesets-version-${{ github.repository }}
       cancel-in-progress: false
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
       pull-requests: write
@@ -113,7 +113,7 @@ jobs:
   release:
     needs: [plan, validate]
     if: needs.plan.outputs.release == 'true' && github.event_name != 'pull_request'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
       packages: write
@@ -160,7 +160,7 @@ jobs:
   deploy:
     needs: [plan, release]
     if: github.event_name == 'workflow_dispatch' && inputs.deploy && vars.BASE_DEPLOY_ENABLED == 'true'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     environment: deployment
     steps:
       - uses: actions/checkout@v4
