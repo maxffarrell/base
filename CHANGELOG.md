@@ -1,5 +1,11 @@
 # Base
 
+## 0.0.5
+
+### Patch Changes
+
+- 1e7e541: Update dependencies to latest versions and patch security vulnerabilities.
+
 ## 0.0.4
 
 ### Patch Changes
