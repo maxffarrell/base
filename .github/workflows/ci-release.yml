@@ -27,7 +27,7 @@ jobs:
       version: ${{ steps.plan.outputs.version }}
       commit: ${{ steps.plan.outputs.commit }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ github.event.inputs.release_ref || github.sha }}
@@ -55,7 +55,7 @@ jobs:
           --health-timeout 5s
           --health-retries 12
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.plan.outputs.commit }}
       - uses: actions/setup-node@v4
@@ -95,7 +95,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v4
@@ -120,7 +120,7 @@ jobs:
     outputs:
       digest: ${{ steps.image.outputs.digest }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.plan.outputs.commit }}
       - name: Reserve immutable release tag
@@ -163,7 +163,7 @@ jobs:
     runs-on: ubuntu-24.04
     environment: deployment
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.plan.outputs.commit }}
       - name: Trigger operator-configured deployment
