@@ -9,6 +9,20 @@
 
 	let { data, children }: LayoutProps = $props();
 	let paletteOpen = $state(false);
+	let bannerEl = $state<HTMLDivElement>();
+	$effect(() => {
+		const el = bannerEl;
+		if (!el) return;
+		const set = () =>
+			document.documentElement.style.setProperty('--demo-banner-h', `${el.offsetHeight}px`);
+		set();
+		const ro = new ResizeObserver(set);
+		ro.observe(el);
+		return () => {
+			ro.disconnect();
+			document.documentElement.style.removeProperty('--demo-banner-h');
+		};
+	});
 </script>
 
 <Sidebar.Provider>
@@ -16,7 +30,8 @@
 	<Sidebar.Inset class="min-w-0">
 		{#if data.demo}
 			<div
-				class="flex flex-wrap items-center justify-center gap-x-2 bg-primary px-4 py-1.5 text-center text-xs text-primary-foreground"
+				bind:this={bannerEl}
+				class="sticky top-0 z-50 flex w-full flex-wrap items-center justify-center gap-x-2 bg-primary px-4 py-1.5 text-center text-xs text-primary-foreground"
 			>
 				<span>You're in a private demo workspace. It's deleted after 24 hours.</span>
 				<a

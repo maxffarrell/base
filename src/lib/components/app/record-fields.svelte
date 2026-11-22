@@ -5,6 +5,7 @@
 	import * as NativeSelect from '#lib/components/ui/native-select/index.js';
 	import { getRecordFields, writeFieldValue } from '#lib/remote/fields.remote.ts';
 	import type { FieldEntity } from '#lib/schemas.ts';
+	import { Checkbox } from '#lib/components/ui/checkbox/index.js';
 
 	let { entity, recordId }: { entity: FieldEntity; recordId: string } = $props();
 
@@ -51,14 +52,12 @@
 							</NativeSelect.Root>
 						{:else if f.type === 'checkbox'}
 							<span class="flex h-8 items-center">
-								<input
-									type="checkbox"
-									class="accent-primary"
+								<Checkbox
 									checked={draft[f.id] === 'true'}
-									onchange={(e) => {
-										const v = e.currentTarget.checked ? 'true' : null;
-										draft[f.id] = v ?? '';
-										save(f, v);
+									onCheckedChange={(v) => {
+										const val = v ? 'true' : null;
+										draft[f.id] = val ?? '';
+										save(f, val);
 									}}
 								/>
 							</span>
