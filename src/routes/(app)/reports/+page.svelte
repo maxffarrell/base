@@ -79,18 +79,18 @@
 					value={entity}
 					onchange={(e) => (entity = (e.target as HTMLSelectElement).value)}
 				>
-					{#each defs as d (d.name)}<NativeSelect.Option value={d.name}
-							>{d.labelPlural ?? `${d.label}s`}</NativeSelect.Option
-						>{/each}
+					{#each defs as d (d.name)}<NativeSelect.Option value={d.name}>
+							{d.labelPlural ?? `${d.label}s`}
+						</NativeSelect.Option>{/each}
 				</NativeSelect.Root>
 				<NativeSelect.Root
 					class="h-9 w-44"
 					value={groupBy}
 					onchange={(e) => (groupBy = (e.target as HTMLSelectElement).value)}
 				>
-					{#each groupFields as f (f.key)}<NativeSelect.Option value={f.key}
-							>By {f.label}</NativeSelect.Option
-						>{/each}
+					{#each groupFields as f (f.key)}<NativeSelect.Option value={f.key}>
+							By {f.label}
+						</NativeSelect.Option>{/each}
 				</NativeSelect.Root>
 				<NativeSelect.Root
 					class="h-9 w-44"
@@ -98,9 +98,9 @@
 					onchange={(e) => (sumField = (e.target as HTMLSelectElement).value)}
 				>
 					<NativeSelect.Option value="">Count only</NativeSelect.Option>
-					{#each sumFields as f (f.key)}<NativeSelect.Option value={f.key}
-							>Sum {f.label}</NativeSelect.Option
-						>{/each}
+					{#each sumFields as f (f.key)}<NativeSelect.Option value={f.key}>
+							Sum {f.label}
+						</NativeSelect.Option>{/each}
 				</NativeSelect.Root>
 			</div>
 
@@ -124,9 +124,9 @@
 									</div>
 									<span class="w-12 text-right tabular-nums">{r.count}</span>
 									{#if sumField}
-										<span class="w-24 text-right text-muted-foreground tabular-nums"
-											>{isCurrency ? formatMoney(r.sum) : r.sum}</span
-										>
+										<span class="w-24 text-right text-muted-foreground tabular-nums">
+											{isCurrency ? formatMoney(r.sum) : r.sum}
+										</span>
 									{/if}
 								</button>
 							{/each}

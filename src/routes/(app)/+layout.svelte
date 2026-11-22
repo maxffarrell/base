@@ -36,8 +36,10 @@
 				<span>You're in a private demo workspace. It's deleted after 24 hours.</span>
 				<a
 					class="font-medium underline underline-offset-2"
-					href="https://github.com/maxffarrell/base">Deploy your own</a
+					href="https://github.com/maxffarrell/base"
 				>
+					Deploy your own
+				</a>
 			</div>
 		{/if}
 		<svelte:boundary>

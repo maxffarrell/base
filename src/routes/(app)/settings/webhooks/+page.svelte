@@ -75,8 +75,10 @@
 									toast[status >= 200 && status < 300 ? 'success' : 'error'](
 										status ? `Delivered — HTTP ${status}` : 'Delivery failed'
 									);
-								}}>Test</Button
+								}}
 							>
+								Test
+							</Button>
 							<Button
 								size="icon-sm"
 								variant="ghost"
@@ -88,8 +90,10 @@
 										onConfirm: async () => {
 											await deleteWebhook(h.id);
 										}
-									})}><Trash /></Button
+									})}
 							>
+								<Trash />
+							</Button>
 						</div>
 						<div
 							class="flex flex-wrap items-center gap-x-4 gap-y-1 pl-12 text-xs text-muted-foreground"
@@ -100,30 +104,33 @@
 									navigator.clipboard
 										.writeText(h.secret)
 										.then(() => toast.success('Secret copied'))}
-								><Copy class="size-3" /> Copy signing secret</button
 							>
+								<Copy class="size-3" /> Copy signing secret
+							</button>
 							<span>Events: {h.events.join(', ')}</span>
 							{#if h.lastDeliveryAt}<span
 									class={h.lastDeliveryStatus && h.lastDeliveryStatus < 300 ? '' : 'text-red-600'}
-									>Last delivery {formatRelative(h.lastDeliveryAt)} · {h.lastDeliveryStatus ??
-										'failed'}</span
-								>{/if}
-							<button class="hover:text-foreground" onclick={() => toggleLog(h.id)}
-								>{openLog === h.id ? 'Hide' : 'Show'} delivery log</button
-							>
+								>
+									Last delivery {formatRelative(h.lastDeliveryAt)} · {h.lastDeliveryStatus ??
+										'failed'}
+								</span>{/if}
+							<button class="hover:text-foreground" onclick={() => toggleLog(h.id)}>
+								{openLog === h.id ? 'Hide' : 'Show'} delivery log
+							</button>
 						</div>
 						{#if openLog === h.id}
 							{#if logItems.length}
 								<ul class="ml-12 divide-y rounded border text-xs">
 									{#each logItems as d (d.id)}
 										<li class="flex items-center gap-3 px-2 py-1.5">
-											<span class={d.status && d.status < 300 ? 'text-green-600' : 'text-red-600'}
-												>{d.status || 'fail'}</span
-											>
+											<span class={d.status && d.status < 300 ? 'text-green-600' : 'text-red-600'}>
+												{d.status || 'fail'}
+											</span>
 											<span class="flex-1 truncate font-mono">{d.eventType}</span>
 											<span class="text-muted-foreground">{formatRelative(d.attemptedAt)}</span>
-											{#if d.error}<span class="max-w-40 truncate text-red-600">{d.error}</span
-												>{/if}
+											{#if d.error}<span class="max-w-40 truncate text-red-600">
+													{d.error}
+												</span>{/if}
 										</li>
 									{/each}
 								</ul>

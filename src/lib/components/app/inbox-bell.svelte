@@ -34,8 +34,9 @@
 				{#if inbox.unread}
 					<span
 						class="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground"
-						>{inbox.unread > 99 ? '99+' : inbox.unread}</span
 					>
+						{inbox.unread > 99 ? '99+' : inbox.unread}
+					</span>
 				{/if}
 			</Button>
 		{/snippet}
@@ -68,16 +69,18 @@
 								<span
 									class="block truncate text-sm {n.readAt
 										? 'text-muted-foreground'
-										: 'font-medium'}">{n.title}</span
+										: 'font-medium'}"
 								>
+									{n.title}
+								</span>
 								{#if n.body}
-									<span class="mt-0.5 line-clamp-2 block text-xs text-muted-foreground"
-										>{n.body}</span
-									>
+									<span class="mt-0.5 line-clamp-2 block text-xs text-muted-foreground">
+										{n.body}
+									</span>
 								{/if}
-								<span class="mt-1 block text-[11px] text-muted-foreground/70"
-									>{formatRelative(n.createdAt)}</span
-								>
+								<span class="mt-1 block text-[11px] text-muted-foreground/70">
+									{formatRelative(n.createdAt)}
+								</span>
 							</span>
 						</button>
 					</li>
@@ -88,8 +91,10 @@
 			<a
 				href="/inbox"
 				class="text-xs text-muted-foreground hover:text-foreground"
-				onclick={() => (open = false)}>View all notifications</a
+				onclick={() => (open = false)}
 			>
+				View all notifications
+			</a>
 		</div>
 	</Popover.Content>
 </Popover.Root>

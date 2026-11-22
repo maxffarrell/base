@@ -177,12 +177,12 @@
 							<ul class="divide-y">
 								{#each items.slice(0, 6) as r (r.id)}
 									<li class="flex items-baseline justify-between gap-3 py-2 text-sm">
-										<a class="min-w-0 truncate font-medium hover:underline" href="/{d.name}/{r.id}"
-											>{r[d.titleField ?? 'id'] ?? r.id}</a
-										>
-										<span class="shrink-0 text-xs text-destructive"
-											>{formatDate(String(r[field.key]).slice(0, 10))}</span
-										>
+										<a class="min-w-0 truncate font-medium hover:underline" href="/{d.name}/{r.id}">
+											{r[d.titleField ?? 'id'] ?? r.id}
+										</a>
+										<span class="shrink-0 text-xs text-destructive">
+											{formatDate(String(r[field.key]).slice(0, 10))}
+										</span>
 									</li>
 								{/each}
 							</ul>
@@ -201,9 +201,9 @@
 					<ul class="divide-y">
 						{#each shared as s (s.entity + s.id)}
 							<li class="flex items-baseline justify-between gap-3 py-2 text-sm">
-								<a class="min-w-0 truncate font-medium hover:underline" href="/{s.entity}/{s.id}"
-									>{s.title}</a
-								>
+								<a class="min-w-0 truncate font-medium hover:underline" href="/{s.entity}/{s.id}">
+									{s.title}
+								</a>
 								<span class="shrink-0 text-xs text-muted-foreground">from {s.by}</span>
 							</li>
 						{/each}
@@ -220,9 +220,9 @@
 				<ul class="divide-y">
 					{#each favorites as f (f.entity + f.id)}
 						<li class="flex items-baseline justify-between gap-3 py-2 text-sm">
-							<a class="min-w-0 truncate font-medium hover:underline" href="/{f.entity}/{f.id}"
-								>{f.title}</a
-							>
+							<a class="min-w-0 truncate font-medium hover:underline" href="/{f.entity}/{f.id}">
+								{f.title}
+							</a>
 							<span class="shrink-0 text-xs text-muted-foreground">{f.label}</span>
 						</li>
 					{/each}
@@ -241,8 +241,10 @@
 								<Card.Title class="text-base">My {d.labelPlural ?? `${d.label}s`}</Card.Title>
 								<a
 									class="text-xs text-muted-foreground hover:underline"
-									href="/{d.name}?filter_{field.key}={me}">View all →</a
+									href="/{d.name}?filter_{field.key}={me}"
 								>
+									View all →
+								</a>
 							</Card.Header>
 							<Card.Content>
 								<ul class="divide-y">
@@ -250,8 +252,10 @@
 										<li>
 											<a
 												class="block truncate py-2 text-sm font-medium hover:underline"
-												href="/{d.name}/{r.id}">{r[d.titleField ?? 'id'] ?? r.id}</a
+												href="/{d.name}/{r.id}"
 											>
+												{r[d.titleField ?? 'id'] ?? r.id}
+											</a>
 										</li>
 									{/each}
 								</ul>
@@ -267,23 +271,23 @@
 		<Card.Root class="max-w-3xl">
 			<Card.Header class="flex-row items-center justify-between space-y-0">
 				<Card.Title class="text-base">Recent activity</Card.Title>
-				<a href="/settings/audit" class="text-xs text-muted-foreground hover:underline"
-					>Audit log →</a
-				>
+				<a href="/settings/audit" class="text-xs text-muted-foreground hover:underline">
+					Audit log →
+				</a>
 			</Card.Header>
 			<Card.Content>
 				<ul class="divide-y">
 					{#each audit.rows.slice(0, 12) as a (a.id)}
 						<li class="flex items-baseline justify-between gap-3 py-2 text-sm">
 							<span class="min-w-0 truncate">
-								<a class="font-medium hover:underline" href="/{a.entityType}/{a.entityId}"
-									>{a.summary ?? a.action}</a
-								>
+								<a class="font-medium hover:underline" href="/{a.entityType}/{a.entityId}">
+									{a.summary ?? a.action}
+								</a>
 								<span class="text-muted-foreground"> · {a.actorName ?? 'System'}</span>
 							</span>
-							<span class="shrink-0 text-xs text-muted-foreground"
-								>{formatRelative(a.createdAt)}</span
-							>
+							<span class="shrink-0 text-xs text-muted-foreground">
+								{formatRelative(a.createdAt)}
+							</span>
 						</li>
 					{/each}
 				</ul>

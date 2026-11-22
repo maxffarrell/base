@@ -26,46 +26,46 @@
 </script>
 
 <Card.Root>
-	<Card.Header
-		><Card.Title>Workspace</Card.Title><Card.Description
-			>Shown to your team and in the tenant portal.</Card.Description
-		></Card.Header
-	>
+	<Card.Header>
+		<Card.Title>Workspace</Card.Title><Card.Description>
+			Shown to your team and in the tenant portal.
+		</Card.Description>
+	</Card.Header>
 	<Card.Content>
 		<form class="flex items-end gap-3" onsubmit={save}>
-			<Field.Field class="flex-1"
-				><Field.Label for="org-name">Name</Field.Label><Input
+			<Field.Field class="flex-1">
+				<Field.Label for="org-name">Name</Field.Label><Input
 					id="org-name"
 					bind:value={name}
 					disabled={!canEdit}
 					required
-				/></Field.Field
-			>
+				/>
+			</Field.Field>
 			<Button type="submit" disabled={!canEdit || name === org.name}>Save</Button>
 		</form>
 	</Card.Content>
 </Card.Root>
 <Card.Root>
-	<Card.Header
-		><Card.Title>Get familiar</Card.Title><Card.Description
-			>Take the guided tour of the interface again — it opens on the dashboard. You can also replay
-			it from Settings → Profile.</Card.Description
-		></Card.Header
-	>
+	<Card.Header>
+		<Card.Title>Get familiar</Card.Title><Card.Description>
+			Take the guided tour of the interface again — it opens on the dashboard. You can also replay
+			it from Settings → Profile.
+		</Card.Description>
+	</Card.Header>
 	<Card.Content>
 		<Button variant="outline" onclick={() => goto('/dashboard?tour=1')}>Replay the tour</Button>
 	</Card.Content>
 </Card.Root>
 <Card.Root>
-	<Card.Header
-		><Card.Title>Workspace ID</Card.Title><Card.Description
-			>Use this when calling the API or configuring integrations.</Card.Description
-		></Card.Header
-	>
-	<Card.Content
-		><div class="flex items-center gap-2">
+	<Card.Header>
+		<Card.Title>Workspace ID</Card.Title><Card.Description>
+			Use this when calling the API or configuring integrations.
+		</Card.Description>
+	</Card.Header>
+	<Card.Content>
+		<div class="flex items-center gap-2">
 			<code class="rounded bg-muted px-2 py-1 font-mono text-sm">{org.id}</code>
 			<CopyButton size="icon-sm" variant="ghost" aria-label="Copy workspace ID" text={org.id} />
-		</div></Card.Content
-	>
+		</div>
+	</Card.Content>
 </Card.Root>

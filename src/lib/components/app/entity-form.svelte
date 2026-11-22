@@ -238,8 +238,10 @@
 								onclick={() => {
 									linkNew = getEntityDef(f.linkTo!) ?? null;
 									linkNewField = f.key;
-								}}><Plus /></Button
+								}}
 							>
+								<Plus />
+							</Button>
 						{/if}
 					</div>
 				{:else if f.type === 'user'}
@@ -277,9 +279,9 @@
 				{dupCount === 1 ? 'es' : ''} this {def.titleField}
 			</p>
 		{/if}
-		<Button type="submit" disabled={saving}
-			>{record ? 'Save changes' : `Create ${def.label}`}</Button
-		>
+		<Button type="submit" disabled={saving}>
+			{record ? 'Save changes' : `Create ${def.label}`}
+		</Button>
 	</div>
 </form>
 

@@ -29,8 +29,10 @@
 						type="button"
 						class="rounded-sm hover:text-destructive"
 						aria-label="Remove {t}"
-						onclick={() => (value = value.filter((x) => x !== t))}><X class="size-3" /></button
+						onclick={() => (value = value.filter((x) => x !== t))}
 					>
+						<X class="size-3" />
+					</button>
 				</Badge>
 			{/each}
 		</div>

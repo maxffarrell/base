@@ -51,8 +51,8 @@
 		</Card.Description>
 	</Card.Header>
 	<Card.Content>
-		<Button variant="outline" onclick={() => goto('/dashboard?tour=1')}
-			><GraduationCap /> Replay the tour</Button
-		>
+		<Button variant="outline" onclick={() => goto('/dashboard?tour=1')}>
+			<GraduationCap /> Replay the tour
+		</Button>
 	</Card.Content>
 </Card.Root>

@@ -68,12 +68,12 @@
 						/>{:else}<Puzzle />{/if}
 				</span>
 				<div class="min-w-0 flex-1 space-y-1">
-					<Card.Title class="flex flex-wrap items-center gap-2"
-						>{i.name}
-						{#if i.installed && !i.enabled}<Badge variant="outline">Paused</Badge
-							>{:else if i.installed && i.enabled}<Badge variant="secondary">On</Badge
-							>{/if}</Card.Title
-					>
+					<Card.Title class="flex flex-wrap items-center gap-2">
+						{i.name}
+						{#if i.installed && !i.enabled}<Badge variant="outline">
+								Paused
+							</Badge>{:else if i.installed && i.enabled}<Badge variant="secondary">On</Badge>{/if}
+					</Card.Title>
 					<Card.Description>{i.description}</Card.Description>
 				</div>
 			</Card.Header>
@@ -83,8 +83,10 @@
 					size="sm"
 					variant={i.installed ? 'outline' : 'default'}
 					disabled={!canManage}
-					onclick={() => open(i)}>{i.installed ? 'Configure' : 'Install'}</Button
+					onclick={() => open(i)}
 				>
+					{i.installed ? 'Configure' : 'Install'}
+				</Button>
 			</Card.Footer>
 		</Card.Root>
 	{/each}
@@ -99,11 +101,11 @@
 					<Sheet.Description>{editing.description}</Sheet.Description>
 				</Sheet.Header>
 				<Field.Group class="gap-4 px-4">
-					<Field.Field orientation="horizontal"
-						><Switch id="int-enabled" bind:checked={enabled} /><Field.Label for="int-enabled"
-							>Enabled</Field.Label
-						></Field.Field
-					>
+					<Field.Field orientation="horizontal">
+						<Switch id="int-enabled" bind:checked={enabled} /><Field.Label for="int-enabled">
+							Enabled
+						</Field.Label>
+					</Field.Field>
 					{#each editing.config as f (f.key)}
 						{#if f.type === 'boolean'}
 							<Field.Field orientation="horizontal">
