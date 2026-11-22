@@ -16,7 +16,7 @@
 	<Sidebar.Inset class="min-w-0">
 		{#if data.demo}
 			<div
-				class="flex flex-wrap items-center justify-center gap-x-2 bg-primary px-4 py-1.5 text-center text-xs text-primary-foreground"
+				class="sticky top-0 z-50 flex w-full flex-wrap items-center justify-center gap-x-2 bg-primary px-4 py-1.5 text-center text-xs text-primary-foreground"
 			>
 				<span>You're in a private demo workspace. It's deleted after 24 hours.</span>
 				<a

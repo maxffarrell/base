@@ -10,6 +10,7 @@
 	import { getEntityDef } from '#lib/entities.ts';
 	import '#lib/modules/index.ts';
 	import InboxIcon from '@lucide/svelte/icons/inbox';
+	import { Checkbox } from '#lib/components/ui/checkbox/index.js';
 
 	const inbox = $derived(await getInboxPage());
 	let unreadOnly = $state(false);
@@ -37,7 +38,7 @@
 <div class="flex flex-col gap-3 p-4">
 	<div class="flex items-center justify-between gap-2">
 		<label class="flex items-center gap-2 text-sm text-muted-foreground">
-			<input type="checkbox" bind:checked={unreadOnly} class="size-4 accent-primary" />
+			<Checkbox bind:checked={unreadOnly} />
 			Unread only
 		</label>
 		{#if inbox.unread}
