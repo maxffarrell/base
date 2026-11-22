@@ -1,5 +1,11 @@
 # Base
 
+## 0.0.4
+
+### Patch Changes
+
+- bd20148: Restore the full-width sticky demo banner and replace native checkboxes and confirm() calls with shadcn-svelte Checkbox and confirm-delete-dialog components.
+
 ## 0.0.3
 
 ### Patch Changes
