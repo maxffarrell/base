@@ -67,27 +67,27 @@
 							Printed {formatDate(new Date().toISOString().slice(0, 10))}
 						</p>
 					</div>
-					<Button class="print:hidden" variant="outline" size="sm" onclick={() => window.print()}
-						><Printer class="size-4" /> Print</Button
-					>
+					<Button class="print:hidden" variant="outline" size="sm" onclick={() => window.print()}>
+						<Printer class="size-4" /> Print
+					</Button>
 				</div>
 
 				<table class="w-full border-collapse text-sm">
 					<tbody>
 						{#each def.fields as f (f.key)}
 							<tr class="border-b">
-								<th class="w-48 py-2 pr-4 text-left align-top font-medium text-muted-foreground"
-									>{f.label}</th
-								>
+								<th class="w-48 py-2 pr-4 text-left align-top font-medium text-muted-foreground">
+									{f.label}
+								</th>
 								<td class="py-2 whitespace-pre-wrap">{cell(f, record)}</td>
 							</tr>
 						{/each}
 						{#if fieldsQuery?.current?.length}
 							{#each fieldsQuery.current as cf (cf.id)}
 								<tr class="border-b">
-									<th class="w-48 py-2 pr-4 text-left align-top font-medium text-muted-foreground"
-										>{cf.name}</th
-									>
+									<th class="w-48 py-2 pr-4 text-left align-top font-medium text-muted-foreground">
+										{cf.name}
+									</th>
 									<td class="py-2 whitespace-pre-wrap">
 										{cf.type === 'checkbox'
 											? cf.value === 'true'

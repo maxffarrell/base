@@ -109,9 +109,9 @@
 					<Command.Item value={`${hit.type}-${hit.id}`} onSelect={() => go(hit.href)}>
 						<Icon />
 						<span class="truncate">{hit.title}</span>
-						<span class="ml-auto truncate text-xs text-muted-foreground capitalize"
-							>{hit.subtitle}</span
-						>
+						<span class="ml-auto truncate text-xs text-muted-foreground capitalize">
+							{hit.subtitle}
+						</span>
 					</Command.Item>
 				{/each}
 			</Command.Group>
@@ -141,9 +141,10 @@
 		</Command.Group>
 		<Command.Group heading="Create">
 			{#each actions as action (action.href)}
-				<Command.Item value={action.label} onSelect={() => go(action.href)}
-					><Plus /> {action.label}</Command.Item
-				>
+				<Command.Item value={action.label} onSelect={() => go(action.href)}>
+					<Plus />
+					{action.label}
+				</Command.Item>
 			{/each}
 		</Command.Group>
 	</Command.List>
@@ -163,10 +164,10 @@
 			</li>
 			<li class="flex justify-between py-2">
 				<span>Go to…</span>
-				<span class="text-muted-foreground"
-					>G then a key — {#each allNav as n (n.href)}<Kbd>{n.key}</Kbd> {n.label}
-					{/each}</span
-				>
+				<span class="text-muted-foreground">
+					G then a key — {#each allNav as n (n.href)}<Kbd>{n.key}</Kbd> {n.label}
+					{/each}
+				</span>
 			</li>
 			<li class="flex justify-between py-2">
 				<span>New record (on a list)</span><Kbd>N</Kbd>

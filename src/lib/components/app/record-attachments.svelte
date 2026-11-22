@@ -66,16 +66,18 @@
 {#await docsQuery then docs}
 	<Card.Root>
 		<Card.Header class="flex-row items-center justify-between space-y-0">
-			<Card.Title class="flex items-center gap-2 text-base"
-				><Paperclip class="size-4" /> Attachments</Card.Title
-			>
+			<Card.Title class="flex items-center gap-2 text-base">
+				<Paperclip class="size-4" /> Attachments
+			</Card.Title>
 			<Button
 				size="sm"
 				variant="outline"
 				disabled={uploading}
 				onclick={() => document.getElementById(inputId)?.click()}
-				><Upload /> {uploading ? 'Uploading…' : 'Attach'}</Button
 			>
+				<Upload />
+				{uploading ? 'Uploading…' : 'Attach'}
+			</Button>
 		</Card.Header>
 		<Card.Content>
 			<FileDropZone.Root
@@ -120,18 +122,20 @@
 										/>{/if}
 									<span class="truncate">{d.name}</span>
 								</a>
-								<span class="shrink-0 text-xs text-muted-foreground tabular-nums"
-									>{size(d.size)}</span
-								>
-								<span class="hidden shrink-0 text-xs text-muted-foreground sm:inline"
-									>{formatRelative(d.createdAt)}</span
-								>
+								<span class="shrink-0 text-xs text-muted-foreground tabular-nums">
+									{size(d.size)}
+								</span>
+								<span class="hidden shrink-0 text-xs text-muted-foreground sm:inline">
+									{formatRelative(d.createdAt)}
+								</span>
 								<Button
 									size="icon-sm"
 									variant="ghost"
 									aria-label="Delete {d.name}"
-									onclick={() => remove(d.id, d.name)}><Trash2 /></Button
+									onclick={() => remove(d.id, d.name)}
 								>
+									<Trash2 />
+								</Button>
 							</li>
 						{/each}
 					</ul>

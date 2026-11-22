@@ -52,14 +52,18 @@
 			<Button
 				size="sm"
 				variant={entityFilter === '' ? 'default' : 'outline'}
-				onclick={() => (entityFilter = '')}>All</Button
+				onclick={() => (entityFilter = '')}
 			>
+				All
+			</Button>
 			{#each kinds as k (k)}
 				<Button
 					size="sm"
 					variant={entityFilter === k ? 'default' : 'outline'}
-					onclick={() => (entityFilter = k)}>{getEntityDef(k)?.labelPlural ?? k}</Button
+					onclick={() => (entityFilter = k)}
 				>
+					{getEntityDef(k)?.labelPlural ?? k}
+				</Button>
 			{/each}
 		</div>
 	{/if}
@@ -68,9 +72,9 @@
 			<Empty.Header>
 				<Empty.Media variant="icon"><InboxIcon /></Empty.Media>
 				<Empty.Title>All caught up</Empty.Title>
-				<Empty.Description
-					>Notifications from record events, assignments, and workflows land here.</Empty.Description
-				>
+				<Empty.Description>
+					Notifications from record events, assignments, and workflows land here.
+				</Empty.Description>
 			</Empty.Header>
 		</Empty.Root>
 	{:else}
@@ -93,14 +97,15 @@
 							<span class="min-w-0 flex-1">
 								<span
 									class={cn('block text-sm', n.readAt ? 'text-muted-foreground' : 'font-medium')}
-									>{n.title}</span
 								>
+									{n.title}
+								</span>
 								{#if n.body}
 									<span class="mt-0.5 block text-xs text-muted-foreground">{n.body}</span>
 								{/if}
-								<span class="mt-1 block text-[11px] text-muted-foreground/70"
-									>{formatRelative(n.createdAt)} · {n.kind}</span
-								>
+								<span class="mt-1 block text-[11px] text-muted-foreground/70">
+									{formatRelative(n.createdAt)} · {n.kind}
+								</span>
 							</span>
 						</button>
 					</li>

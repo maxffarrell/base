@@ -79,12 +79,11 @@
 <Card.Root>
 	<Card.Header>
 		<Card.Title>API keys</Card.Title>
-		<Card.Description
-			>Use with <code>Authorization: Bearer &lt;key&gt;</code> against <code>/api/v1</code>. Each
-			key only reaches the resources you grant it. See
-			<a class="underline" href="/api/v1/openapi.json" target="_blank">the OpenAPI spec</a
-			>.</Card.Description
-		>
+		<Card.Description>
+			Use with <code>Authorization: Bearer &lt;key&gt;</code> against <code>/api/v1</code>. Each key
+			only reaches the resources you grant it. See
+			<a class="underline" href="/api/v1/openapi.json" target="_blank">the OpenAPI spec</a>.
+		</Card.Description>
 		<Card.Action><Button size="sm" onclick={openCreate}><Plus /> New key</Button></Card.Action>
 	</Card.Header>
 	<Card.Content class="space-y-4">
@@ -114,16 +113,16 @@
 							<div class="flex flex-wrap gap-1">
 								{#if summary === 'custom'}
 									{#each API_RESOURCES.filter((r) => levelOf(k.permissions, r) !== 'none') as r (r)}
-										<Badge variant="outline"
-											>{API_RESOURCE_LABELS[r]} · {levelOf(k.permissions, r) === 'write'
+										<Badge variant="outline">
+											{API_RESOURCE_LABELS[r]} · {levelOf(k.permissions, r) === 'write'
 												? 'read & write'
-												: 'read'}</Badge
-										>
+												: 'read'}
+										</Badge>
 									{/each}
 								{:else}
-									<Badge variant={summary === 'none' ? 'destructive' : 'secondary'}
-										>{presetLabels[summary]}</Badge
-									>
+									<Badge variant={summary === 'none' ? 'destructive' : 'secondary'}>
+										{presetLabels[summary]}
+									</Badge>
 								{/if}
 							</div>
 						</div>
@@ -131,8 +130,10 @@
 							size="icon-sm"
 							variant="ghost"
 							aria-label="Edit permissions"
-							onclick={() => openEdit(k)}><Pencil /></Button
+							onclick={() => openEdit(k)}
 						>
+							<Pencil />
+						</Button>
 						<Button
 							size="icon-sm"
 							variant="ghost"
@@ -143,8 +144,10 @@
 									description:
 										'Anything calling the API with this key starts getting 401s immediately.',
 									onConfirm: () => deleteApiKey(k.id)
-								})}><Trash /></Button
+								})}
 						>
+							<Trash />
+						</Button>
 					</li>
 				{/each}
 			</ul>

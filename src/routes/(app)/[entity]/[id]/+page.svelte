@@ -197,17 +197,18 @@
 						</Button>
 					{/if}
 					{#if aiStatus.licensed && aiStatus.configured}
-						<Button variant="outline" size="sm" onclick={summarize} disabled={aiBusy}
-							><Sparkles class="size-4" /> {aiBusy ? 'Summarizing…' : 'Summarize'}</Button
-						>
+						<Button variant="outline" size="sm" onclick={summarize} disabled={aiBusy}>
+							<Sparkles class="size-4" />
+							{aiBusy ? 'Summarizing…' : 'Summarize'}
+						</Button>
 					{/if}
-					<Button variant="outline" size="sm" href={`/print/${def.name}/${id}`} target="_blank"
-						><Printer /> Print</Button
-					>
+					<Button variant="outline" size="sm" href={`/print/${def.name}/${id}`} target="_blank">
+						<Printer /> Print
+					</Button>
 					{#if canWrite}
-						<Button variant="outline" size="sm" onclick={() => (showDup = true)}
-							><Copy /> Duplicate</Button
-						>
+						<Button variant="outline" size="sm" onclick={() => (showDup = true)}>
+							<Copy /> Duplicate
+						</Button>
 						<Button variant="destructive" size="sm" onclick={remove}><Trash2 /> Delete</Button>
 					{/if}
 				{/if}
@@ -225,11 +226,11 @@
 					<Card.Root>
 						<Card.Header>
 							<Card.Title>Details</Card.Title>
-							<Card.Description class="text-xs"
-								>Created {formatDate(record.createdAt as string)} · Updated {formatDate(
+							<Card.Description class="text-xs">
+								Created {formatDate(record.createdAt as string)} · Updated {formatDate(
 									record.updatedAt as string
-								)}</Card.Description
-							>
+								)}
+							</Card.Description>
 						</Card.Header>
 						<Card.Content>
 							{#if def.formComponent}
@@ -259,8 +260,10 @@
 													<li>
 														<a
 															class="block truncate text-sm hover:underline"
-															href="/{section.entity}/{row.id}">{row.title}</a
+															href="/{section.entity}/{row.id}"
 														>
+															{row.title}
+														</a>
 													</li>
 												{/each}
 											</ul>
@@ -268,8 +271,9 @@
 												<a
 													class="mt-1 inline-block text-xs text-muted-foreground hover:underline"
 													href="/{section.entity}?filter_{section.field}={id}"
-													>View all {section.count} →</a
 												>
+													View all {section.count} →
+												</a>
 											{/if}
 										</div>
 									{/each}
@@ -344,9 +348,9 @@
 	<Modal.Content class="sm:max-w-md">
 		<Modal.Header>
 			<Modal.Title>Share {def?.label ?? 'record'}</Modal.Title>
-			<Modal.Description
-				>Shared members get an inbox notice and see it under “Shared with me”.</Modal.Description
-			>
+			<Modal.Description>
+				Shared members get an inbox notice and see it under “Shared with me”.
+			</Modal.Description>
 		</Modal.Header>
 		<div class="space-y-3">
 			{#if shareableMembers.length}
@@ -369,8 +373,10 @@
 							await shareEntityRecord({ entity: def.name, id, toUserId: shareTarget });
 							shareTarget = '';
 							toast.success('Shared');
-						}}>Share</Button
+						}}
 					>
+						Share
+					</Button>
 				</div>
 			{/if}
 			{#if sharesQuery?.current?.length}
@@ -384,8 +390,10 @@
 								onclick={async () => {
 									if (!def) return;
 									await unshareEntityRecord({ entity: def.name, id, toUserId: m.userId });
-								}}>Remove</Button
+								}}
 							>
+								Remove
+							</Button>
 						</li>
 					{/each}
 				</ul>
@@ -399,9 +407,9 @@
 <Modal.Root open={aiSummary !== null} onOpenChange={(v) => !v && (aiSummary = null)}>
 	<Modal.Content class="sm:max-w-lg">
 		<Modal.Header>
-			<Modal.Title class="flex items-center gap-2"
-				><Sparkles class="size-4" /> AI summary</Modal.Title
-			>
+			<Modal.Title class="flex items-center gap-2">
+				<Sparkles class="size-4" /> AI summary
+			</Modal.Title>
 		</Modal.Header>
 		{#if aiBusy || aiSummary === ''}
 			<p class="text-sm text-muted-foreground">Summarizing…</p>

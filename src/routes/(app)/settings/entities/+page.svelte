@@ -20,10 +20,10 @@
 <Card.Root>
 	<Card.Header>
 		<Card.Title>Entities</Card.Title>
-		<Card.Description
-			>Every entity registered in this workspace. Modules define these in code; the list, form, API
-			and workflow UIs are all generated from them.</Card.Description
-		>
+		<Card.Description>
+			Every entity registered in this workspace. Modules define these in code; the list, form, API
+			and workflow UIs are all generated from them.
+		</Card.Description>
 	</Card.Header>
 	<Card.Content class="px-0">
 		<Table.Root>
@@ -60,27 +60,28 @@
 							<div class="flex flex-wrap gap-1">
 								{#if d.searchFields?.length}<Badge variant="secondary">search</Badge>{/if}
 								{#if d.archivable}<Badge variant="secondary">archivable</Badge>{/if}
-								{#if d.fields.some((f) => f.transitions)}<Badge variant="secondary"
-										>state machine</Badge
-									>{/if}
-								{#if d.fields.some((f) => f.type === 'user')}<Badge variant="secondary"
-										>assignable</Badge
-									>{/if}
+								{#if d.fields.some((f) => f.transitions)}<Badge variant="secondary">
+										state machine
+									</Badge>{/if}
+								{#if d.fields.some((f) => f.type === 'user')}<Badge variant="secondary">
+										assignable
+									</Badge>{/if}
 							</div>
 						</Table.Cell>
 						<Table.Cell class="hidden lg:table-cell">
 							<div class="flex items-center gap-1">
-								<code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs"
-									>/api/v1/{d.name}</code
-								>
+								<code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+									/api/v1/{d.name}
+								</code>
 								<Button
 									size="icon-sm"
 									variant="ghost"
 									aria-label="Copy curl"
 									onclick={() =>
 										navigator.clipboard.writeText(curl(d.name)).then(() => toast.success('Copied'))}
-									><Copy /></Button
 								>
+									<Copy />
+								</Button>
 							</div>
 						</Table.Cell>
 						<Table.Cell class="text-right tabular-nums">

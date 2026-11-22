@@ -70,9 +70,9 @@
 <Card.Root>
 	<Card.Header>
 		<Card.Title>What you get</Card.Title>
-		<Card.Description
-			>Each feature works on every entity — no per-entity configuration.</Card.Description
-		>
+		<Card.Description>
+			Each feature works on every entity — no per-entity configuration.
+		</Card.Description>
 	</Card.Header>
 	<Card.Content>
 		<ul class="divide-y text-sm">

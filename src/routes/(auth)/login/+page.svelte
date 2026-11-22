@@ -114,9 +114,9 @@
 			<Separator class="flex-1" /> or <Separator class="flex-1" />
 		</div>
 		<div class="grid gap-2">
-			<Button type="button" variant="outline" onclick={passkey}
-				><KeyRound /> Sign in with a passkey</Button
-			>
+			<Button type="button" variant="outline" onclick={passkey}>
+				<KeyRound /> Sign in with a passkey
+			</Button>
 			<Button type="button" variant="outline" onclick={() => (showSso = !showSso)}>
 				<Building />
 				{showSso ? 'Use a password instead' : 'Single sign-on (SAML / OIDC)'}
@@ -126,7 +126,9 @@
 	{#if !page.data.demo}<p class="text-center text-sm text-muted-foreground">
 			New to Base? <a
 				href="/signup{page.url.search}"
-				class="font-medium text-foreground underline-offset-4 hover:underline">Create an account</a
+				class="font-medium text-foreground underline-offset-4 hover:underline"
 			>
+				Create an account
+			</a>
 		</p>{/if}
 </form>

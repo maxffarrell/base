@@ -433,12 +433,13 @@
 
 <PageHeader title={def.labelPlural ?? `${def.label}s`} crumbs={[{ label: 'Home', href: '/' }]}>
 	{#snippet actions()}
-		<Button size="sm" variant="outline" onclick={exportCsv} disabled={exporting}
-			><Download /> {exporting ? 'Exporting…' : 'Export'}</Button
-		>
-		<Button size="sm" variant="outline" onclick={() => (showImport = true)}
-			><Upload /> Import</Button
-		>
+		<Button size="sm" variant="outline" onclick={exportCsv} disabled={exporting}>
+			<Download />
+			{exporting ? 'Exporting…' : 'Export'}
+		</Button>
+		<Button size="sm" variant="outline" onclick={() => (showImport = true)}>
+			<Upload /> Import
+		</Button>
 		{#if canWrite}
 			<Button size="sm" onclick={() => (showNew = true)}><Plus /> New {def.label}</Button>
 		{/if}
@@ -475,19 +476,22 @@
 			>
 				<NativeSelect.Option value="">{f.label}: all</NativeSelect.Option>
 				{#if f.type === 'select'}
-					{#each f.options ?? [] as o (o)}<NativeSelect.Option value={o}>{o}</NativeSelect.Option
-						>{/each}
+					{#each f.options ?? [] as o (o)}<NativeSelect.Option value={o}>
+							{o}
+						</NativeSelect.Option>{/each}
 				{:else if f.type === 'boolean'}
 					<NativeSelect.Option value="true">Yes</NativeSelect.Option>
 					<NativeSelect.Option value="false">No</NativeSelect.Option>
 				{:else if f.type === 'link'}
 					{#each Object.entries(linkTitles[f.key] ?? {}) as [id, title] (id)}<NativeSelect.Option
-							value={id}>{title}</NativeSelect.Option
-						>{/each}
+							value={id}
+						>
+							{title}
+						</NativeSelect.Option>{/each}
 				{:else if f.type === 'user'}
-					{#each Object.entries(userNames) as [id, name] (id)}<NativeSelect.Option value={id}
-							>{name}</NativeSelect.Option
-						>{/each}
+					{#each Object.entries(userNames) as [id, name] (id)}<NativeSelect.Option value={id}>
+							{name}
+						</NativeSelect.Option>{/each}
 				{/if}
 			</NativeSelect.Root>
 		{/each}
@@ -497,8 +501,9 @@
 				variant={filters[userFilterField.key] === myId ? 'default' : 'outline'}
 				onclick={() =>
 					setFilter(userFilterField.key, filters[userFilterField.key] === myId ? '' : myId)}
-				>Assigned to me</Button
 			>
+				Assigned to me
+			</Button>
 		{/if}
 		{#if def.archivable}
 			<label class="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -543,9 +548,9 @@
 					onchange={(e) => (groupBy = (e.target as HTMLSelectElement).value)}
 				>
 					<NativeSelect.Option value="">Group: none</NativeSelect.Option>
-					{#each groupFields as f (f.key)}<NativeSelect.Option value={f.key}
-							>{f.label}</NativeSelect.Option
-						>{/each}
+					{#each groupFields as f (f.key)}<NativeSelect.Option value={f.key}>
+							{f.label}
+						</NativeSelect.Option>{/each}
 				</NativeSelect.Root>
 			{/if}
 			<ViewSwitcher {views} bind:value={view} />
@@ -566,18 +571,20 @@
 							: `No ${def.labelPlural ?? `${def.label}s`} yet`}
 					</Empty.Title>
 					{#if !q && !Object.keys(filters).length}
-						<Empty.Description
-							>{def.description ?? 'Create the first one to get started.'}</Empty.Description
-						>
+						<Empty.Description>
+							{def.description ?? 'Create the first one to get started.'}
+						</Empty.Description>
 					{/if}
 				</Empty.Header>
-				<Empty.Content
-					>{#if !q && !Object.keys(filters).length && canWrite}<Button
+				<Empty.Content>
+					{#if !q && !Object.keys(filters).length && canWrite}<Button
 							size="sm"
-							onclick={() => (showNew = true)}><Plus /> New {def.label}</Button
-						>{/if}
-					></Empty.Content
-				>
+							onclick={() => (showNew = true)}
+						>
+							<Plus /> New {def.label}
+						</Button>{/if}
+					>
+				</Empty.Content>
 			</Empty.Root>
 		{:else if view === 'kanban' && kanbanQuery}
 			{#await kanbanQuery then result}
@@ -690,8 +697,9 @@
 													{/each}
 													{#if (row[f.key] as string[]).length > 3}<span
 															class="text-xs text-muted-foreground"
-															>+{(row[f.key] as string[]).length - 3}</span
-														>{/if}
+														>
+															+{(row[f.key] as string[]).length - 3}
+														</span>{/if}
 												</span>
 											{:else}
 												<span class="line-clamp-1">{cell(f, row)}</span>
@@ -751,18 +759,19 @@
 >
 	{#snippet actions()}
 		{#if def.archivable}
-			<Button variant="outline" size="sm" onclick={bulkArchive}
-				><Archive class="size-4" /> {archivedOnly ? 'Restore' : 'Archive'}</Button
-			>
+			<Button variant="outline" size="sm" onclick={bulkArchive}>
+				<Archive class="size-4" />
+				{archivedOnly ? 'Restore' : 'Archive'}
+			</Button>
 		{/if}
 		{#if bulkFields.length}
-			<Button variant="outline" size="sm" onclick={() => (showBulkSet = true)}
-				><Pencil class="size-4" /> Set field</Button
-			>
+			<Button variant="outline" size="sm" onclick={() => (showBulkSet = true)}>
+				<Pencil class="size-4" /> Set field
+			</Button>
 		{/if}
-		<Button variant="destructive" size="sm" onclick={removeSelected}
-			><Trash2 class="size-4" /> Delete</Button
-		>
+		<Button variant="destructive" size="sm" onclick={removeSelected}>
+			<Trash2 class="size-4" /> Delete
+		</Button>
 	{/snippet}
 </BulkBar>
 
@@ -803,9 +812,10 @@
 <Modal.Root bind:open={showBulkSet}>
 	<Modal.Content class="sm:max-w-md">
 		<Modal.Header>
-			<Modal.Title
-				>Set field on {selected.size} {selected.size === 1 ? 'record' : 'records'}</Modal.Title
-			>
+			<Modal.Title>
+				Set field on {selected.size}
+				{selected.size === 1 ? 'record' : 'records'}
+			</Modal.Title>
 		</Modal.Header>
 		<div class="space-y-3">
 			<NativeSelect.Root
@@ -818,9 +828,9 @@
 				}}
 			>
 				<NativeSelect.Option value="">Choose a field…</NativeSelect.Option>
-				{#each bulkFields as f (f.key)}<NativeSelect.Option value={f.key}
-						>{f.label}</NativeSelect.Option
-					>{/each}
+				{#each bulkFields as f (f.key)}<NativeSelect.Option value={f.key}>
+						{f.label}
+					</NativeSelect.Option>{/each}
 			</NativeSelect.Root>
 			{#if bulkFieldDef}
 				<NativeSelect.Root
@@ -831,16 +841,16 @@
 				>
 					<NativeSelect.Option value="">Choose a value…</NativeSelect.Option>
 					{#if bulkFieldDef.type === 'select'}
-						{#each bulkFieldDef.options ?? [] as o (o)}<NativeSelect.Option value={o}
-								>{o}</NativeSelect.Option
-							>{/each}
+						{#each bulkFieldDef.options ?? [] as o (o)}<NativeSelect.Option value={o}>
+								{o}
+							</NativeSelect.Option>{/each}
 					{:else if bulkFieldDef.type === 'boolean'}
 						<NativeSelect.Option value="true">Yes</NativeSelect.Option>
 						<NativeSelect.Option value="false">No</NativeSelect.Option>
 					{:else}
-						{#each Object.entries(userNames) as [id, name] (id)}<NativeSelect.Option value={id}
-								>{name}</NativeSelect.Option
-							>{/each}
+						{#each Object.entries(userNames) as [id, name] (id)}<NativeSelect.Option value={id}>
+								{name}
+							</NativeSelect.Option>{/each}
 					{/if}
 				</NativeSelect.Root>
 			{/if}

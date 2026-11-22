@@ -52,9 +52,9 @@
 
 <Card.Root>
 	<Card.Header>
-		<Card.Title class="flex items-center gap-2 text-base"
-			><MessageSquare class="size-4" /> Comments</Card.Title
-		>
+		<Card.Title class="flex items-center gap-2 text-base">
+			<MessageSquare class="size-4" /> Comments
+		</Card.Title>
 	</Card.Header>
 	<Card.Content class="space-y-4">
 		<div class="space-y-2">
@@ -67,9 +67,9 @@
 				}}
 			/>
 			<div class="flex justify-end">
-				<Button size="sm" onclick={post} disabled={posting || !body.trim()}
-					>{posting ? 'Posting…' : 'Comment'}</Button
-				>
+				<Button size="sm" onclick={post} disabled={posting || !body.trim()}>
+					{posting ? 'Posting…' : 'Comment'}
+				</Button>
 			</div>
 		</div>
 		{#await commentsQuery then comments}
@@ -87,8 +87,10 @@
 											variant="ghost"
 											class="opacity-0 group-hover:opacity-100"
 											aria-label="Delete comment"
-											onclick={() => remove(c.id)}><Trash2 class="size-3.5" /></Button
+											onclick={() => remove(c.id)}
 										>
+											<Trash2 class="size-3.5" />
+										</Button>
 									{/if}
 								</span>
 							</div>
