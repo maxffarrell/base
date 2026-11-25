@@ -34,7 +34,7 @@
 		"@sveltejs/kit": "^3.4.0",
 		"@sveltejs/vite-plugin-svelte": "^7.3.1",
 		"@tailwindcss/vite": "^4.3.5",
-		"@tanstack/table-core": "^8.21.3",
+		"@tanstack/table-core": "^9.0.0",
 		"@types/node": "^26.6.6",
 		"@types/nodemailer": "^8.0.2",
 		"auth": "^1.7.27",
